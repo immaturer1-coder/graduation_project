@@ -1,0 +1,28 @@
+# PostgreSQL. Versions 9.3 and up are supported.
+#
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  # docker-compose.ymlのサービス名「db」を指定
+  host: db
+  # postgresイメージのデフォルトユーザー
+  username: postgres
+  # docker-compose.ymlで指定したパスワード
+  password: password
+  # 接続プール数
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  database: graduation_project_development
+
+test:
+  <<: *default
+  database: graduation_project_test
+
+# 本番環境の設定（基本的にはこのまま、パスワード等は環境変数で管理）
+production:
+  <<: *default
+  database: graduation_project_production
+  username: graduation_project
+  password: <%= ENV["GRADUATION_PROJECT_DATABASE_PASSWORD"] %>
