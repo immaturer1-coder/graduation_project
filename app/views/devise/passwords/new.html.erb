@@ -1,0 +1,84 @@
+<%# Rails 7 / Devise / Tailwind CSS パスワード再設定画面 (セキュリティ強化版) %>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    touch-action: none;
+  }
+</style>
+
+<div class="fixed inset-0 bg-slate-950 text-slate-100 font-sans flex items-center justify-center p-4 overflow-hidden select-none">
+  <div class="w-full max-w-md flex flex-col h-full max-h-[750px]">
+    
+    <!-- ロゴセクション -->
+    <div class="text-center my-auto">
+      <h1 class="text-4xl font-black tracking-tighter bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent mb-1">
+        FocusFlow
+      </h1>
+      <p class="text-slate-400 text-[10px] tracking-widest uppercase font-medium">Security First Reset.</p>
+    </div>
+
+    <!-- フォームカード -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex-shrink-0">
+      <h2 class="text-base font-bold mb-2 text-center uppercase tracking-[0.2em] text-slate-300">Reset Password</h2>
+      <p class="text-[11px] text-slate-500 text-center mb-6 leading-relaxed">
+        We'll send you instructions to reset your password.
+      </p>
+      
+      <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post, class: "space-y-5", data: { turbo: false } }) do |f| %>
+        
+        <%# フラッシュメッセージの表示 (config.paranoid = true 時の成功通知) %>
+        <% if flash[:notice] %>
+          <div class="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 text-[11px] font-bold p-3 rounded-xl text-center">
+            <%= flash[:notice] %>
+          </div>
+        <% end %>
+
+        <%# エラーメッセージの表示 (形式エラー等がある場合のみ) %>
+        <% if resource.errors.any? %>
+          <div class="bg-red-500/10 border border-red-500/50 text-red-500 text-[11px] font-bold p-3 rounded-xl text-center">
+            Invalid email format or something went wrong.
+          </div>
+        <% end %>
+
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Registered Email</label>
+          <div class="relative">
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>
+            </div>
+            <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 transition-all text-sm text-white placeholder:text-slate-700", placeholder: "Enter your email", required: true %>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <%= f.submit "Send Reset Instructions", class: "w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20 cursor-pointer active:scale-[0.98] border-none text-sm" %>
+        </div>
+      <% end %>
+
+      <div class="relative my-6 text-center">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-slate-800"></div>
+        </div>
+        <span class="relative px-3 bg-slate-900 text-[9px] text-slate-600 uppercase tracking-[0.3em] font-black italic">or</span>
+      </div>
+
+      <div class="text-center">
+        <%= link_to "Back to Log in", new_session_path(resource_name), class: "text-[11px] text-slate-500 hover:text-indigo-400 transition-colors font-bold uppercase tracking-widest" %>
+      </div>
+    </div>
+
+    <!-- フッターリンク -->
+    <div class="my-auto text-center">
+      <p class="text-[11px] text-slate-600 font-bold">
+        Security Note: <span class="text-slate-500 font-normal">We never disclose email existence.</span>
+      </p>
+    </div>
+  </div>
+</div>

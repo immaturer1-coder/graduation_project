@@ -1,0 +1,177 @@
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    touch-action: none;
+    background-color: #020617;
+  }
+
+  .dot-active {
+    background-color: #818cf8;
+    width: 1.5rem;
+  }
+</style>
+
+<!-- Main Container -->
+<div class="fixed inset-0 bg-slate-950 text-slate-100 font-sans flex items-center justify-center p-4 overflow-hidden select-none">
+  <div class="w-full max-w-md flex flex-col h-full max-h-[700px]">
+    
+    <!-- Slide Section -->
+    <div id="slide-container" class="relative flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing">
+      
+      <!-- Slide 1 -->
+      <div class="slide absolute inset-0 flex flex-col items-center justify-center text-center transition-all duration-1000" id="slide-0">
+        <div class="mb-4 inline-block px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-[9px] font-bold uppercase tracking-[0.3em]">
+          Phase 01
+        </div>
+        <h2 class="text-4xl md:text-6xl font-black tracking-tighter mb-4 bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent italic leading-tight">
+          DEEP FOCUS
+        </h2>
+        <p class="max-w-[280px] text-slate-400 text-xs leading-relaxed font-medium">
+          Eliminate distractions and enter a state of extreme focus.<br>
+          FocusFlow maximizes your work density.
+        </p>
+      </div>
+
+      <!-- Slide 2 -->
+      <div class="slide absolute inset-0 flex flex-col items-center justify-center text-center transition-all duration-1000 opacity-0 pointer-events-none" id="slide-1">
+        <div class="mb-4 inline-block px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-[9px] font-bold uppercase tracking-[0.3em]">
+          Phase 02
+        </div>
+        <h2 class="text-4xl md:text-6xl font-black tracking-tighter mb-4 bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent italic leading-tight">
+          SMART CYCLE
+        </h2>
+        <p class="max-w-[280px] text-slate-400 text-xs leading-relaxed font-medium">
+          Control brain fatigue with scientific interval designs<br>
+          to achieve sustainable immersion.
+        </p>
+      </div>
+
+      <!-- Slide 3 -->
+      <div class="slide absolute inset-0 flex flex-col items-center justify-center text-center transition-all duration-1000 opacity-0 pointer-events-none" id="slide-2">
+        <div class="mb-4 inline-block px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-400 text-[9px] font-bold uppercase tracking-[0.3em]">
+          Phase 03
+        </div>
+        <h2 class="text-4xl md:text-6xl font-black tracking-tighter mb-4 bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent italic leading-tight">
+          FLOW STATE
+        </h2>
+        <p class="max-w-[280px] text-slate-400 text-xs leading-relaxed font-medium">
+          Recorded results, accelerated productivity.<br>
+          Experience a new level of flow.
+        </p>
+      </div>
+    </div>
+
+    <!-- Controls Section -->
+    <div class="flex-shrink-0 flex flex-col gap-4 pb-12">
+      <div class="flex gap-3 justify-center mb-2" id="dots">
+        <button onclick="goToSlide(0)" class="h-1.5 w-4 rounded-full bg-slate-800 transition-all duration-500 dot-active focus:outline-none"></button>
+        <button onclick="goToSlide(1)" class="h-1.5 w-4 rounded-full bg-slate-800 transition-all duration-500 focus:outline-none"></button>
+        <button onclick="goToSlide(2)" class="h-1.5 w-4 rounded-full bg-slate-800 transition-all duration-500 focus:outline-none"></button>
+      </div>
+      
+      <div class="flex flex-col gap-3 px-6">
+        <%= link_to "Get Started", new_user_registration_path, class: "w-full py-4 bg-white text-slate-950 text-center font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-slate-200 transition-colors shadow-lg shadow-white/5" %>
+        <%= link_to "Log in", new_user_session_path, class: "w-full py-4 bg-transparent border border-slate-700 text-white text-center font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-slate-900 transition-colors" %>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let currentSlide = 0;
+  let autoPlayInterval;
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.querySelectorAll('#dots > button');
+  const totalSlides = slides.length;
+  const slideContainer = document.getElementById('slide-container');
+
+  function showSlide(index) {
+    currentSlide = index;
+    slides.forEach((slide, i) => {
+      if (i === index) {
+        slide.classList.remove('opacity-0', 'pointer-events-none');
+        slide.classList.add('opacity-1');
+        dots[i].classList.add('dot-active', 'bg-indigo-400');
+        dots[i].classList.remove('bg-slate-800');
+      } else {
+        slide.classList.add('opacity-0', 'pointer-events-none');
+        slide.classList.remove('opacity-1');
+        dots[i].classList.remove('dot-active', 'bg-indigo-400');
+        dots[i].classList.add('bg-slate-800');
+      }
+    });
+  }
+
+  function goToSlide(index) {
+    showSlide(index);
+    resetAutoPlay();
+  }
+
+  function nextSlide() {
+    currentSlide = (currentSlide + 1) % totalSlides;
+    showSlide(currentSlide);
+  }
+
+  function prevSlide() {
+    currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+    showSlide(currentSlide);
+  }
+
+  function startAutoPlay() {
+    autoPlayInterval = setInterval(nextSlide, 5000);
+  }
+
+  function resetAutoPlay() {
+    clearInterval(autoPlayInterval);
+    startAutoPlay();
+  }
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  slideContainer.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  slideContainer.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, { passive: true });
+
+  let isDragging = false;
+  let dragStartX = 0;
+
+  slideContainer.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    dragStartX = e.screenX;
+  });
+
+  slideContainer.addEventListener('mouseup', (e) => {
+    if (!isDragging) return;
+    touchEndX = e.screenX;
+    touchStartX = dragStartX;
+    handleSwipe();
+    isDragging = false;
+  });
+
+  function handleSwipe() {
+    const threshold = 50;
+    if (touchEndX < touchStartX - threshold) {
+      nextSlide();
+      resetAutoPlay();
+    } else if (touchEndX > touchStartX + threshold) {
+      prevSlide();
+      resetAutoPlay();
+    }
+  }
+
+  startAutoPlay();
+</script>

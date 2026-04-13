@@ -1,0 +1,96 @@
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- 全体的なスクロールを完全に禁止するためのスタイル -->
+<style>
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    touch-action: none; /* スワイプによるスクロールを無効化 */
+  }
+</style>
+
+<div class="fixed inset-0 bg-slate-950 text-slate-100 font-sans flex items-center justify-center p-4 overflow-hidden select-none">
+  <div class="w-full max-w-md flex flex-col h-full max-h-[700px]">
+    <!-- Logo -->
+    <div class="text-center my-auto">
+      <h1 class="text-3xl font-black tracking-tighter bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent mb-1">
+        FocusFlow
+      </h1>
+      <p class="text-slate-400 text-[10px] tracking-widest uppercase">Deep focus, once again.</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl flex-shrink-0">
+      <h2 class="text-sm font-bold mb-3 text-center uppercase tracking-widest text-slate-300">Sign up</h2>
+      
+      <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-2.5" }) do |f| %>
+        <%= render "devise/shared/error_messages", resource: resource %>
+
+        <div class="space-y-1">
+          <%= f.label :email, class: "block text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1" %>
+          <div class="relative">
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 flex items-center justify-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </div>
+            <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl py-2 pl-9 pr-4 focus:outline-none focus:border-indigo-500 transition-all", placeholder: "Email" %>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+            Password 
+            <% if @minimum_password_length %>
+              <span class="text-[8px] normal-case text-slate-600">(min <%= @minimum_password_length %>)</span>
+            <% end %>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 flex items-center justify-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <%= f.password_field :password, autocomplete: "new-password", class: "w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl py-2 pl-9 pr-4 focus:outline-none focus:border-indigo-500 transition-all", placeholder: "Password" %>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <%= f.label :password_confirmation, "Confirm", class: "block text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1" %>
+          <div class="relative">
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 flex items-center justify-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl py-2 pl-9 pr-4 focus:outline-none focus:border-indigo-500 transition-all", placeholder: "Confirm Password" %>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <%= f.submit "Create Account", class: "w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20 cursor-pointer text-sm border-none" %>
+        </div>
+      <% end %>
+
+      <div class="relative my-4 text-center">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-slate-800"></div>
+        </div>
+        <span class="relative px-3 bg-slate-900 text-[9px] text-slate-500 uppercase tracking-widest font-bold">OR</span>
+      </div>
+
+      <div class="text-center text-xs">
+        <%= render "devise/shared/links" %>
+      </div>
+    </div>
+
+    <!-- Bottom Link -->
+    <div class="my-auto text-center">
+      <p class="text-[11px] text-slate-500">
+        Already have an account? 
+        <%- if controller_name != 'sessions' %>
+          <%= link_to "Log in", new_session_path(resource_name), class: "text-indigo-400 font-bold hover:underline" %>
+        <% end %>
+      </p>
+    </div>
+  </div>
+</div>
