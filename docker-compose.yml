@@ -6,15 +6,26 @@ services:
     environment:
       POSTGRES_PASSWORD: password
   web:
-    build: .
-    # サーバー起動前に古いPIDファイルを削除するコマンド
-    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    build:
+      context: .
+      args:
+        USER_UID: 1000
+        USER_GID: 1000
+    # 修正ポイント: 起動を高速化。node_modulesがある場合はインストールをスキップし、サーバーを即座に起動します。
+    command: >
+      bash -c "
+      rm -f tmp/pids/server.pid &&
+      if [ ! -d 'node_modules' ]; then
+        npm install &&
+        npm install @hotwired/turbo-rails @hotwired/stimulus esbuild tailwindcss @tailwindcss/cli --save
+      fi &&
+      bundle exec rails s -p 3000 -b '0.0.0.0'
+      "
     volumes:
       - .:/app
     ports:
       - "3000:3000"
     environment:
-      # データベース接続用のパスワード。ユーザー名はデフォルトの postgres を使用
       POSTGRES_PASSWORD: password
     depends_on:
       - db

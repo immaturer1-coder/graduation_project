@@ -1,0 +1,18 @@
+<%# app/views/shared/_flash.html.erb %>
+<div id="flash" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-xs sm:max-w-sm space-y-2 pointer-events-none">
+  <% flash.each do |type, message| %>
+    <div class="pointer-events-auto animate-in fade-in slide-in-from-top-4 duration-300">
+      <% if type == "notice" %>
+        <div class="bg-indigo-600/90 backdrop-blur-md border border-indigo-400/50 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3">
+          <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <span class="text-sm font-bold"><%= message %></span>
+        </div>
+      <% elsif type == "alert" %>
+        <div class="bg-rose-600/90 backdrop-blur-md border border-rose-400/50 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3">
+          <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+          <span class="text-sm font-bold"><%= message %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
