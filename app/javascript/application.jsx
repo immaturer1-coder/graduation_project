@@ -4,7 +4,7 @@ import "./controllers"
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './components/App';
+import App from './src/components/App';
 
 document.addEventListener('turbo:load', () => {
   const container = document.getElementById('root');
