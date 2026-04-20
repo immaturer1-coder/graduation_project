@@ -69,4 +69,14 @@ Rails.application.configure do
 
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
+
+  # 全てのホスト名/IPでのアクセスを許可
+  config.hosts.clear
+
+  # HTTPSを強制
+  config.force_ssl = true
+
+  # 127.0.0.1 や Dockerネットワーク内のプロキシからのヘッダーを信頼する
+  # Rails 7以降でNginx経由のHTTPSを正しく認識させるために必要
+  config.assume_ssl = true
 end

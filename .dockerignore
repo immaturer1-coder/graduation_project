@@ -1,0 +1,6 @@
+.git
+tmp/
+log/
+node_modules/
+storage/
+public/assets/
