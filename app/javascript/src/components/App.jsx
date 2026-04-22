@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LayoutDashboard, History, Settings, LogOut, ChevronRight, Activity, Timer } from 'lucide-react';
 
+// API & UI Components
+import { createSession } from '../api/sessions';
+import LoadingOverlay from './ui/LoadingOverlay';
+
 // 各ファイルへの正しい相対パス
 import LandingPage from '../pages/auth/LandingPage';
 import SignUpPage from '../pages/auth/SignUpPage';
@@ -69,7 +73,8 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState('landing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [history, setHistory] = useState([]);
-  
+  const [isSaving, setIsSaving] = useState(false);
+
   // アラーム音用のRef
   const audioRef = useRef(null);
 
@@ -99,7 +104,6 @@ export default function App() {
 
   /**
    * フロー修正箇所: 設定時間が過ぎた際のアラーム通知
-   * カウントダウンが0になった際に ConcentrationTimer から呼ばれます。
    */
   const playAlarm = () => {
     if (audioRef.current) {
@@ -111,18 +115,32 @@ export default function App() {
 
   /**
    * フロー修正箇所: 物理アクションによる終了（スマホを表に向ける）
-   * ConcentrationTimer が「表向き」を検知した際に呼び出されます。
+   * 分割したAPIユーティリティを使用して保存を実行します。
    */
-  const handleFocusComplete = (result) => {
+  const handleFocusComplete = async (result) => {
     // 1. 音を止める
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+
+    setIsSaving(true);
     
-    // 2. 分析画面へ遷移（ユーザーはスマホを手に取って画面を見ている状態）
-    console.log("Smartphone flipped up. Navigating to Analysis Page.");
-    setCurrentPage('analysis');
+    try {
+      // 外部化したAPI関数を呼び出し（resultにはlogsが含まれています）
+      await createSession(result);
+      console.log("Session saved successfully.");
+      
+      // 2. 分析画面へ遷移
+      setCurrentPage('analysis');
+    } catch (error) {
+      console.error("Failed to save session:", error);
+      // エラー時もユーザー体験を阻害しないよう、分析画面へ遷移させる
+      // ※ 必要に応じて「保存に失敗しました」等のトースト通知を出すのが理想的
+      setCurrentPage('analysis');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -139,25 +157,23 @@ export default function App() {
 
   return (
     <AuthenticatedLayout currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout}>
+      {/* 保存中のオーバーレイ表示 */}
+      {isSaving && <LoadingOverlay message="Analyzing Session..." />}
+
       {/* アラーム音源（ループ再生） */}
-      <audio 
-        ref={audioRef} 
-        src="https://actions.google.com/sounds/v1/alarms/alarm_clock_ringing_proximity.ogg" 
-        loop 
+      <audio
+        ref={audioRef}
+        src="https://actions.google.com/sounds/v1/alarms/alarm_clock_ringing_proximity.ogg"
+        loop
       />
 
-      {/* ConcentrationTimer への指示:
-        - 内部に STOP ボタンを配置しない（物理アクションのみで終了させる）
-        - カウントダウン終了時に props.onTimeUp() を実行する
-        - 加速度/傾きセンサーで「表向き」を検知した時に props.onComplete() を実行する
-      */}
       {currentPage === 'timer' && (
-        <ConcentrationTimer 
-          onComplete={handleFocusComplete} 
+        <ConcentrationTimer
+          onComplete={handleFocusComplete}
           onTimeUp={playAlarm}
         />
       )}
-      
+
       {currentPage === 'analysis' && <AnalysisPage />}
       {currentPage === 'history' && <HistoryPage />}
       {currentPage === 'settings' && <SettingsPage onNavigate={navigate} />}
