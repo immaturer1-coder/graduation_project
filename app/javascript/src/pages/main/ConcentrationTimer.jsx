@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Square, Zap, Smartphone, ChevronLeft, Timer, Volume2, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useSensorLogger } from '../../hooks/useSensorLogger';
 
 /**
  * FocusDetectionEngine(子): センサー検知と物理フィードバック
@@ -74,6 +75,9 @@ const ConcentrationTimer = ({ onComplete }) => {
   const alarmRef = useRef(null);
   const audioRef = useRef(null);
 
+  // センサーログ収集のフック (getLatestLogs を取得)
+  const { getLatestLogs } = useSensorLogger(phase === 'focusing' && isFlipped);
+
   // アラーム制御
   const toggleAlarm = useCallback((start) => {
     if (!start) return (clearInterval(alarmRef.current), alarmRef.current = null);
@@ -102,14 +106,17 @@ const ConcentrationTimer = ({ onComplete }) => {
       clearTimeout(warningTimerRef.current);
       if (phase === 'waiting') setPhase('focusing');
     } else if (phase === 'focusing') {
-      // 目標時間を過ぎている場合は即座に完了処理へ、そうでなければ警告フェーズへ
+      // ログの最新状態をRef経由で取得（依存関係を回避するため）
+      const currentLogs = getLatestLogs();
+
       if (isTimeUp) {
         toggleAlarm(false);
         onComplete({ 
           duration: time.s, 
           mode: selectedMode, 
           completed: true,
-          interrupted: false 
+          interrupted: false,
+          logs: currentLogs 
         });
       } else {
         setIsWarning(true);
@@ -118,13 +125,15 @@ const ConcentrationTimer = ({ onComplete }) => {
           onComplete({ 
             duration: time.s, 
             mode: selectedMode, 
-            completed: false,
-            interrupted: true 
+            completed: false, 
+            interrupted: true,
+            logs: currentLogs 
           });
         }, 3000);
       }
     }
-  }, [phase, time.s, selectedMode, isTimeUp, onComplete, toggleAlarm]);
+    // 依存配列に logs を含めないことで、ログ蓄積による関数の再生成を防ぐ
+  }, [phase, time.s, selectedMode, isTimeUp, onComplete, toggleAlarm, getLatestLogs]);
 
   // タイマー進行
   useEffect(() => {
