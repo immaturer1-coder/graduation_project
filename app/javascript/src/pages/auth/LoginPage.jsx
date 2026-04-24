@@ -17,16 +17,33 @@ const LoginPage = ({ onNavigate, onAuthSuccess }) => {
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
+
+    // 1. フロントエンドでの未入力チェック（日本語化対応）
+    if (!email) {
+      setError(t('error_email_required'));
+      return;
+    }
+    if (!password) {
+      setError(t('error_password_required'));
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
       const data = await login(email, password);
       console.log('Login Success:', data);
-      // App.jsx側の状態を更新
-      onAuthSuccess(data.data); 
+      onAuthSuccess(data.data);
     } catch (err) {
-      setError(err.message);
+      // 2. サーバーエラーのハンドリング
+      // サーバーから "Invalid email or password." 等が返ってきた場合、
+      // 共通の日本語メッセージに変換するか、i18nキーを使用します。
+      if (err.message.includes('Invalid') || err.message.includes('password')) {
+        setError(t('error_something_went_wrong')); // または専用の "ID/PWが違います" キーを作成
+      } else {
+        setError(t('error_something_went_wrong'));
+      }
     } finally {
       setLoading(false);
     }
@@ -51,28 +68,31 @@ const LoginPage = ({ onNavigate, onAuthSuccess }) => {
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
-          <InputField 
-            label={t('email')} 
-            type="email" 
-            placeholder={t('placeholder_email')} 
+        {/* onSubmitでハンドルすることで、スマホの「確定/Go」ボタンにも対応。
+          InputFieldのrequired属性によるブラウザ標準の英語バリデーションを防ぐため、
+          手動チェックを行う場合は form に noValidate をつけるか、requiredを外してJSで制御します。
+        */}
+        <form onSubmit={handleLogin} noValidate className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
+          <InputField
+            label={t('email')}
+            type="email"
+            placeholder={t('placeholder_email')}
             icon={Mail}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
+          // requiredを削除するか、ブラウザ標準に任せるか選択可能
           />
-          <InputField 
-            label={t('password')} 
-            type="password" 
-            placeholder="••••••••" 
+          <InputField
+            label={t('password')}
+            type="password"
+            placeholder="••••••••"
             icon={Lock}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
           />
 
           {error && (
-            <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-[10px] font-bold text-center">
+            <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-[10px] font-bold text-center animate-in fade-in zoom-in duration-200">
               {error}
             </div>
           )}
@@ -87,8 +107,8 @@ const LoginPage = ({ onNavigate, onAuthSuccess }) => {
             </button>
           </div>
 
-          <PrimaryButton 
-            onClick={handleLogin} 
+          <PrimaryButton
+            type="submit" // onClickではなくtype="submit"を推奨
             icon={loading ? Loader2 : ArrowRight}
             disabled={loading}
           >
