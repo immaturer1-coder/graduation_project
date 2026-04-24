@@ -33,13 +33,18 @@ Rails.application.configure do
     config.cache_store = :null_store
   end
 
+  # メールURLのデフォルトホスト設定
   config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
+
+  # --- 追記: Letter Opener Web の設定 ---
+  # 開発環境で送信されたメールをブラウザで確認できるようにする
+  config.action_mailer.delivery_method = :letter_opener_web
+  # メールの送信に失敗した時にエラーを発生させる
+  config.action_mailer.raise_delivery_errors = true
+  # --------------------------------------
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
-
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
 
   config.action_mailer.perform_caching = false
 

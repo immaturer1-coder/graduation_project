@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { LayoutDashboard, History, Settings, LogOut, ChevronRight, Activity, Timer } from 'lucide-react';
 
 // API & UI Components
-import { createSession } from '../api/sessions';
+// 修正箇所: sessions から focus_records へのインポート変更
+import { createFocusRecord } from '../api/focus_records';
 import LoadingOverlay from './ui/LoadingOverlay';
 
 // 各ファイルへの正しい相対パス
@@ -103,7 +104,7 @@ export default function App() {
   };
 
   /**
-   * フロー修正箇所: 設定時間が過ぎた際のアラーム通知
+   * 設定時間が過ぎた際のアラーム通知
    */
   const playAlarm = () => {
     if (audioRef.current) {
@@ -114,8 +115,8 @@ export default function App() {
   };
 
   /**
-   * フロー修正箇所: 物理アクションによる終了（スマホを表に向ける）
-   * 分割したAPIユーティリティを使用して保存を実行します。
+   * 物理アクションによる終了（スマホを表に向ける）
+   * 修正箇所: createFocusRecord を呼び出すように変更
    */
   const handleFocusComplete = async (result) => {
     // 1. 音を止める
@@ -127,16 +128,15 @@ export default function App() {
     setIsSaving(true);
     
     try {
-      // 外部化したAPI関数を呼び出し（resultにはlogsが含まれています）
-      await createSession(result);
-      console.log("Session saved successfully.");
+      // 修正箇所: 以前の createSession(result) を createFocusRecord(result) に変更
+      await createFocusRecord(result);
+      console.log("Focus record saved successfully.");
       
       // 2. 分析画面へ遷移
       setCurrentPage('analysis');
     } catch (error) {
-      console.error("Failed to save session:", error);
+      console.error("Failed to save focus record:", error);
       // エラー時もユーザー体験を阻害しないよう、分析画面へ遷移させる
-      // ※ 必要に応じて「保存に失敗しました」等のトースト通知を出すのが理想的
       setCurrentPage('analysis');
     } finally {
       setIsSaving(false);

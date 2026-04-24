@@ -10,22 +10,46 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_22_045148) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_23_000000) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
-  create_table "sessions", force: :cascade do |t|
-    t.integer "duration"
-    t.string "mode_type"
-    t.string "status"
-    t.jsonb "motion_logs"
-    t.bigint "user_id", null: false
+  create_table "focus_record_details", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "focus_record_id", null: false
+    t.boolean "is_finished", default: false
+    t.jsonb "motion_logs", default: []
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["user_id"], name: "index_sessions_on_user_id"
+    t.index ["focus_record_id"], name: "index_focus_record_details_on_focus_record_id", unique: true
   end
 
-  create_table "users", force: :cascade do |t|
+  create_table "focus_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "mode", null: false
+    t.datetime "started_at"
+    t.datetime "ended_at"
+    t.integer "duration_minutes"
+    t.integer "focus_level"
+    t.string "stop_reason"
+    t.text "note"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_focus_records_on_user_id"
+  end
+
+  create_table "hints", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "focus_record_id", null: false
+    t.string "advice_type"
+    t.text "analysis_report"
+    t.jsonb "statistical_data", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["focus_record_id"], name: "index_hints_on_focus_record_id"
+  end
+
+  create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
@@ -37,5 +61,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_22_045148) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
-  add_foreign_key "sessions", "users"
+  add_foreign_key "focus_record_details", "focus_records"
+  add_foreign_key "focus_records", "users"
+  add_foreign_key "hints", "focus_records"
 end
