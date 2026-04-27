@@ -5,6 +5,7 @@ services:
       - ./tmp/db:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: password
+
   web:
     build:
       context: .
@@ -22,10 +23,13 @@ services:
       "
     volumes:
       - .:/app
-    # ports: # ホストへの直接公開は不要（Nginx経由にするため）
-    #   - "3000:3000"
+    # env_fileを追加して .env ファイルを読み込む
+    env_file:
+      - .env
     environment:
       POSTGRES_PASSWORD: password
+      # Gemini APIキーをコンテナに注入
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
     depends_on:
       - db
 

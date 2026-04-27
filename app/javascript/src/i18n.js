@@ -49,7 +49,13 @@ const resources = {
       "error_email_required": "メールアドレスを入力してください",
       "error_password_required": "パスワードを入力してください",
       "error_name_required": "名前を入力してください",
-      "error_something_went_wrong": "エラーが発生しました。もう一度お試しください"
+      "error_something_went_wrong": "エラーが発生しました。もう一度お試しください",
+
+      // AI分析関連のエラー
+      "AI_ANALYSIS_ERROR": "AI分析の実行中にエラーが発生しました。時間をおいて再度お試しください。",
+      "ANALYSIS_FAILED": "分析に失敗しました",
+      "UNEXPECTED_ERROR": "予期せぬエラーが発生しました",
+      "PROMPT_REQUIRED": "分析用のデータが不足しています"
     }
   },
   en: {
@@ -82,7 +88,13 @@ const resources = {
       "error_email_required": "Please enter your email",
       "error_password_required": "Please enter your password",
       "error_name_required": "Please enter your name",
-      "error_something_went_wrong": "Something went wrong. Please try again"
+      "error_something_went_wrong": "Something went wrong. Please try again",
+
+      // AI Analysis related errors
+      "AI_ANALYSIS_ERROR": "An error occurred during AI analysis. Please try again later.",
+      "ANALYSIS_FAILED": "Analysis failed",
+      "UNEXPECTED_ERROR": "An unexpected error occurred",
+      "PROMPT_REQUIRED": "Prompt data is required"
     }
   }
 };

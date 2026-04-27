@@ -15,6 +15,10 @@ Rails.application.routes.draw do
 
   namespace :api do
     resources :focus_records, only: [:create, :index, :show]
+
+    # AI分析用のルートを追加
+    post 'ai_analysis/analyze', to: 'ai_analysis#analyze'
+    
     namespace :v1 do
       resources :translations, only: [:index], defaults: { format: :json }
     end
