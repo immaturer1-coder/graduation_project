@@ -30,7 +30,7 @@ class InitialSchema < ActiveRecord::Migration[7.0]
       t.string :mode, null: false # Timer / Focus
       t.datetime :started_at
       t.datetime :ended_at
-      t.integer :duration_minutes
+      t.float :duration_minutes
       t.integer :focus_level
       t.string :stop_reason
       t.text :note
@@ -38,9 +38,9 @@ class InitialSchema < ActiveRecord::Migration[7.0]
     end
 
     # 3. FOCUS_RECORD_DETAILS テーブル (ER図 スクリーンショット 143)
-    # センサーログ(motion_logs)を含む詳細。1対1のリレーション。
+    # センサーログ(motion_logs)を含む詳細。
     create_table :focus_record_details, id: :uuid do |t|
-      t.references :focus_record, type: :uuid, null: false, foreign_key: true, index: { unique: true }
+      t.references :focus_record, type: :uuid, null: false, foreign_key: true, index: true
       t.boolean :is_finished, default: false
       t.jsonb :motion_logs, default: [] # 傾き変化のログをJSON配列で保持
       t.timestamps

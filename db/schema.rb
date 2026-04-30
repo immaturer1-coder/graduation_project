@@ -21,7 +21,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_23_000000) do
     t.jsonb "motion_logs", default: []
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["focus_record_id"], name: "index_focus_record_details_on_focus_record_id", unique: true
+    t.index ["focus_record_id"], name: "index_focus_record_details_on_focus_record_id"
   end
 
   create_table "focus_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -29,7 +29,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_23_000000) do
     t.string "mode", null: false
     t.datetime "started_at"
     t.datetime "ended_at"
-    t.integer "duration_minutes"
+    t.float "duration_minutes"
     t.integer "focus_level"
     t.string "stop_reason"
     t.text "note"
