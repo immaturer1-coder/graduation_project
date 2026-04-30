@@ -1,0 +1,205 @@
+.
+├── Dockerfile
+├── Gemfile
+├── Gemfile.lock
+├── Procfile.dev
+├── README.md
+├── Rakefile
+├── all_my_code.md
+├── app
+│   ├── assets
+│   │   ├── builds
+│   │   │   ├── application.css
+│   │   │   ├── application.js
+│   │   │   └── application.js.map
+│   │   ├── config
+│   │   │   └── manifest.js
+│   │   ├── images
+│   │   └── stylesheets
+│   │       └── application.tailwind.css
+│   ├── channels
+│   │   └── application_cable
+│   │       ├── channel.rb
+│   │       └── connection.rb
+│   ├── controllers
+│   │   ├── api
+│   │   │   ├── ai_analysis_controller.rb
+│   │   │   ├── focus_records_controller.rb
+│   │   │   └── v1
+│   │   │       └── translations_controller.rb
+│   │   ├── application_controller.rb
+│   │   ├── concerns
+│   │   ├── static_pages_controller.rb
+│   │   └── users
+│   │       ├── registrations_controller.rb
+│   │       └── sessions_controller.rb
+│   ├── helpers
+│   │   ├── application_helper.rb
+│   │   └── static_pages_helper.rb
+│   ├── javascript
+│   │   ├── application.jsx
+│   │   ├── controllers
+│   │   │   ├── application.js
+│   │   │   ├── hello_controller.js
+│   │   │   └── index.js
+│   │   └── src
+│   │       ├── api
+│   │       │   ├── auth.js
+│   │       │   └── focus_records.js
+│   │       ├── components
+│   │       │   ├── App.jsx
+│   │       │   ├── layout
+│   │       │   └── ui
+│   │       │       ├── Card.jsx
+│   │       │       ├── DrumRoll.jsx
+│   │       │       ├── FocusDetectionEngine.jsx
+│   │       │       ├── InputField.jsx
+│   │       │       ├── LoadingOverlay.jsx
+│   │       │       ├── PrimaryButton.jsx
+│   │       │       └── ReflectionForm.jsx
+│   │       ├── contexts
+│   │       ├── hooks
+│   │       │   ├── useConcentrationLogic.js
+│   │       │   ├── useGemini.js
+│   │       │   └── useSensorLogger.js
+│   │       ├── i18n.js
+│   │       ├── pages
+│   │       │   ├── auth
+│   │       │   │   ├── LandingPage.jsx
+│   │       │   │   ├── LoginPage.jsx
+│   │       │   │   ├── ResetPasswordPage.jsx
+│   │       │   │   └── SignUpPage.jsx
+│   │       │   ├── main
+│   │       │   │   ├── AnalysisPage.jsx
+│   │       │   │   ├── ConcentrationTimer.jsx
+│   │       │   │   ├── FocusDetectionPage.jsx
+│   │       │   │   └── HistoryPage.jsx
+│   │       │   └── static
+│   │       │       ├── PrivacyPage.jsx
+│   │       │       └── TermsPage.jsx
+│   │       ├── services
+│   │       ├── styles
+│   │       └── utils
+│   │           └── constants.js
+│   ├── jobs
+│   │   └── application_job.rb
+│   ├── mailers
+│   │   └── application_mailer.rb
+│   ├── models
+│   │   ├── application_record.rb
+│   │   ├── concerns
+│   │   ├── focus_record.rb
+│   │   ├── focus_record_detail.rb
+│   │   ├── hint.rb
+│   │   └── user.rb
+│   ├── services
+│   │   └── gemini_service.rb
+│   └── views
+│       ├── devise
+│       │   ├── confirmations
+│       │   │   └── new.html.erb
+│       │   ├── mailer
+│       │   │   ├── confirmation_instructions.html.erb
+│       │   │   ├── email_changed.html.erb
+│       │   │   ├── password_change.html.erb
+│       │   │   ├── reset_password_instructions.html.erb
+│       │   │   └── unlock_instructions.html.erb
+│       │   ├── passwords
+│       │   │   ├── edit.html.erb
+│       │   │   └── new.html.erb
+│       │   ├── registrations
+│       │   │   ├── edit.html.erb
+│       │   │   └── new.html.erb
+│       │   ├── sessions
+│       │   │   └── new.html.erb
+│       │   ├── shared
+│       │   │   ├── _error_messages.html.erb
+│       │   │   └── _links.html.erb
+│       │   └── unlocks
+│       │       └── new.html.erb
+│       ├── layouts
+│       │   ├── application.html.erb
+│       │   ├── mailer.html.erb
+│       │   └── mailer.text.erb
+│       ├── shared
+│       │   └── _flash.html.erb
+│       └── static_pages
+│           └── landing.html.erb
+├── bin
+│   ├── bundle
+│   ├── dev
+│   ├── rails
+│   ├── rake
+│   └── setup
+├── bundle.rb
+├── config
+│   ├── application.rb
+│   ├── boot.rb
+│   ├── cable.yml
+│   ├── credentials.yml.enc
+│   ├── database.yml
+│   ├── environment.rb
+│   ├── environments
+│   │   ├── development.rb
+│   │   ├── production.rb
+│   │   └── test.rb
+│   ├── initializers
+│   │   ├── assets.rb
+│   │   ├── content_security_policy.rb
+│   │   ├── devise.rb
+│   │   ├── filter_parameter_logging.rb
+│   │   ├── inflections.rb
+│   │   └── permissions_policy.rb
+│   ├── locales
+│   │   ├── devise.en.yml
+│   │   ├── en.yml
+│   │   └── ja.yml
+│   ├── master.key
+│   ├── puma.rb
+│   ├── routes.rb
+│   └── storage.yml
+├── config.ru
+├── db
+│   ├── migrate
+│   │   └── 20260423000000_initial_schema.rb
+│   ├── schema.rb
+│   └── seeds.rb
+├── docker-compose.yml
+├── entrypoint.sh
+├── false
+├── lib
+│   ├── assets
+│   ├── custom_failure.rb
+│   └── tasks
+├── nginx.conf
+├── package-lock.json
+├── package.json
+├── public
+│   ├── 404.html
+│   ├── 422.html
+│   ├── 500.html
+│   ├── apple-touch-icon-precomposed.png
+│   ├── apple-touch-icon.png
+│   ├── favicon.ico
+│   └── robots.txt
+├── structure.txt
+├── test
+│   ├── application_system_test_case.rb
+│   ├── channels
+│   │   └── application_cable
+│   │       └── connection_test.rb
+│   ├── controllers
+│   │   └── static_pages_controller_test.rb
+│   ├── fixtures
+│   │   ├── files
+│   │   └── users.yml
+│   ├── helpers
+│   ├── integration
+│   ├── mailers
+│   ├── models
+│   │   └── user_test.rb
+│   ├── system
+│   └── test_helper.rb
+└── vendor
+
+71 directories, 132 files
