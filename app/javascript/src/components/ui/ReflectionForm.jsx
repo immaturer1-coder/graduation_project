@@ -2,11 +2,17 @@ import React, { useState, useRef } from 'react';
 import { MessageSquare, Save, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * 内省フォームコンポーネント
+ * スコア（focus_level）は客観的なセッション結果（完遂・時間）から算出し、
+ * ユーザーの自己評価（evaluation）はAI分析用データとして送信。
+ */
 const ReflectionForm = ({ isCompleted, totalSeconds, onSubmit }) => {
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const lockRef = useRef(false);
 
+  // ステート管理
   const [evaluation, setEvaluation] = useState(3);
   const [reason, setReason] = useState(isCompleted ? 'session_completed' : '');
   const [note, setNote] = useState('');
@@ -40,11 +46,28 @@ const ReflectionForm = ({ isCompleted, totalSeconds, onSubmit }) => {
     setIsSubmitting(true);
 
     try {
+      /**
+       * 客観的スコア（focus_level）の算出ロジック (100点満点)
+       * - 完遂時: 基本 70点 + 時間加点 (25分以上で最大30点追加) = 最大100点
+       * - 中断時: 経過時間のみで採点 (25分以上でも最大50点まで)
+       */
+      let score = 0;
+      const durationMinutes = totalSeconds / 60;
+      const targetMinutes = 25; // 基準となる集中時間
+
+      if (isCompleted) {
+        const timeBonus = Math.min(30, (durationMinutes / targetMinutes) * 30);
+        score = Math.round(70 + timeBonus);
+      } else {
+        score = Math.round(Math.min(50, (durationMinutes / targetMinutes) * 50));
+      }
+
       await onSubmit({
-        self_evaluation: evaluation,
-        interruption_reason: isCompleted ? 'Completed' : reason,
-        reflection_note: note,
-        actual_duration: totalSeconds
+        focus_level: score,           // 客観的スコア
+        self_evaluation: evaluation,  // AI分析用の自己評価（😫〜🤩）
+        stop_reason: isCompleted ? 'completed' : reason,
+        note: note,
+        duration_minutes: parseFloat(durationMinutes.toFixed(2))
       });
     } catch (error) {
       console.error("Failed to save reflection:", error);
@@ -58,20 +81,20 @@ const ReflectionForm = ({ isCompleted, totalSeconds, onSubmit }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-hidden">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-full max-h-[90vh] animate-in fade-in zoom-in duration-300">
         
-        {/* Header - コンパクト化 */}
+        {/* Header */}
         <div className="p-4 border-b border-slate-800 flex justify-between items-center shrink-0">
           <div>
             <h2 className="text-lg font-black text-white tracking-tight italic uppercase">
               {t('reflection_title')}
             </h2>
             <p className="text-slate-500 text-[8px] uppercase tracking-[0.3em] mt-0.5 font-bold">
-              {t('reflection_subtitle')}
+              {t('reflection_subtitle')} — {Math.floor(totalSeconds / 60)}m {totalSeconds % 60}s
             </p>
           </div>
         </div>
 
-        {/* Form Body - flex-1 で余白を自動調整し、内部スクロールを禁止 */}
-        <div className="flex flex-col flex-1 overflow-hidden p-5 justify-between">
+        {/* Form Body */}
+        <div className="flex flex-col flex-1 overflow-y-auto p-5 space-y-6">
           
           {/* Evaluation Section */}
           <div className="space-y-3">
@@ -111,7 +134,7 @@ const ReflectionForm = ({ isCompleted, totalSeconds, onSubmit }) => {
             {isCompleted ? (
               <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 py-3 px-4 rounded-2xl text-[10px] font-black tracking-widest flex items-center gap-3">
                 <div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></div>
-                {t('session_completed')}
+                {t('session_completed').toUpperCase()}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-1.5">
@@ -134,7 +157,7 @@ const ReflectionForm = ({ isCompleted, totalSeconds, onSubmit }) => {
             )}
           </div>
 
-          {/* Note Section - 高さを固定しすぎないよう調整 */}
+          {/* Note Section */}
           <div className="space-y-2">
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
@@ -149,13 +172,13 @@ const ReflectionForm = ({ isCompleted, totalSeconds, onSubmit }) => {
                 disabled={isSubmitting}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder={t('insights_placeholder')}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-2xl py-2.5 pl-9 pr-4 h-20 focus:outline-none focus:border-indigo-500 transition-all resize-none placeholder:text-slate-800"
+                className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-2xl py-2.5 pl-9 pr-4 h-20 focus:outline-none focus:border-indigo-500 transition-all resize-none placeholder:text-slate-800 shadow-inner"
               />
             </div>
           </div>
         </div>
 
-        {/* Footer Action - 固定 */}
+        {/* Footer Action */}
         <div className="p-5 bg-slate-800/20 border-t border-slate-800 shrink-0">
           <button
             type="button"
@@ -170,12 +193,12 @@ const ReflectionForm = ({ isCompleted, totalSeconds, onSubmit }) => {
             {isSubmitting ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                {t('analyzing_session')}
+                <span>{t('analyzing_session')}...</span>
               </>
             ) : (
               <>
                 <Save size={16} />
-                {t('save_analyze')}
+                <span>{t('save_analyze')}</span>
               </>
             )}
           </button>

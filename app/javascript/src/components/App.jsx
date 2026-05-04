@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { LayoutDashboard, History, Settings, LogOut, ChevronRight, Activity, Timer } from 'lucide-react';
 
 // API & UI Components
-// 修正箇所: sessions から focus_records へのインポート変更
 import { createFocusRecord } from '../api/focus_records';
 import LoadingOverlay from './ui/LoadingOverlay';
 
@@ -75,8 +74,10 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [history, setHistory] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // 保存された最新の集中データを保持する state を追加
+  const [currentFocusData, setCurrentFocusData] = useState(null);
 
-  // アラーム音用のRef
   const audioRef = useRef(null);
 
   const navigate = (page) => {
@@ -101,25 +102,21 @@ export default function App() {
     setIsAuthenticated(false);
     setCurrentPage('landing');
     setHistory([]);
+    setCurrentFocusData(null);
   };
 
-  /**
-   * 設定時間が過ぎた際のアラーム通知
-   */
   const playAlarm = () => {
     if (audioRef.current) {
       audioRef.current.play().catch(e => {
-        console.warn("Audio play failed (waiting for user interaction):", e);
+        console.warn("Audio play failed:", e);
       });
     }
   };
 
   /**
-   * 物理アクションによる終了（スマホを表に向ける）
-   * 修正箇所: createFocusRecord を呼び出すように変更
+   * 集中セッション保存処理
    */
   const handleFocusComplete = async (result) => {
-    // 1. 音を止める
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -128,15 +125,22 @@ export default function App() {
     setIsSaving(true);
     
     try {
-      // 修正箇所: 以前の createSession(result) を createFocusRecord(result) に変更
-      await createFocusRecord(result);
-      console.log("Focus record saved successfully.");
+      // APIから返ってくる保存済みレコードを取得
+      const response = await createFocusRecord(result);
       
-      // 2. 分析画面へ遷移
+      // レスポンスに含まれる focus_record データを保持
+      // (Railsのコントローラーが { success: true, focus_record: ... } を返す想定)
+      if (response && response.focus_record) {
+        setCurrentFocusData(response.focus_record);
+      } else {
+        // フォールバック: 送信したデータ自体をセット（IDがないため分析は走らないがスコアは出る）
+        setCurrentFocusData(result);
+      }
+
+      console.log("Focus record saved successfully.");
       setCurrentPage('analysis');
     } catch (error) {
       console.error("Failed to save focus record:", error);
-      // エラー時もユーザー体験を阻害しないよう、分析画面へ遷移させる
       setCurrentPage('analysis');
     } finally {
       setIsSaving(false);
@@ -157,10 +161,8 @@ export default function App() {
 
   return (
     <AuthenticatedLayout currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout}>
-      {/* 保存中のオーバーレイ表示 */}
       {isSaving && <LoadingOverlay message="Analyzing Session..." />}
 
-      {/* アラーム音源（ループ再生） */}
       <audio
         ref={audioRef}
         src="https://actions.google.com/sounds/v1/alarms/alarm_clock_ringing_proximity.ogg"
@@ -174,7 +176,14 @@ export default function App() {
         />
       )}
 
-      {currentPage === 'analysis' && <AnalysisPage />}
+      {/* AnalysisPage に保存したデータを渡す */}
+      {currentPage === 'analysis' && (
+        <AnalysisPage 
+          focusData={currentFocusData} 
+          onBack={() => setCurrentPage('timer')}
+        />
+      )}
+      
       {currentPage === 'history' && <HistoryPage />}
       {currentPage === 'settings' && <SettingsPage onNavigate={navigate} />}
 

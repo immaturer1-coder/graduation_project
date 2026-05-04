@@ -27,6 +27,16 @@ const resources = {
       "status_focusing_msg": "集中計測中...",
       "status_complete_msg": "目標達成！端末を戻してください",
 
+      // 分析画面 (AnalysisPage) 用
+      "analysis_title": "分析レポート",
+      "coming_soon_graph": "集中推移グラフ (準備中)",
+      "ai_advisor_label": "AI アドバイザー",
+      "score_label": "スコア",
+      "focus_time_label": "集中時間",
+      "analysis_loading": "AIが集中データを解析中...",
+      "analysis_server_error": "サーバーエラーが発生しました。時間を置いて再度お試しください。",
+      "analysis_waiting": "解析結果を待機中...",
+
       // ラベル
       "user_name": "ユーザー名",
       "email": "メールアドレス",
@@ -111,6 +121,15 @@ const resources = {
       "min": "Min",
       "status_focusing_msg": "Focusing...",
       "status_complete_msg": "Target Completed! Pick up",
+
+      "analysis_title": "ANALYSIS",
+      "coming_soon_graph": "Focus Flow Graph (Coming Soon)",
+      "ai_advisor_label": "AI Advisor",
+      "score_label": "Score",
+      "focus_time_label": "Focus Time",
+      "analysis_loading": "AI is analyzing your session...",
+      "analysis_server_error": "Server error occurred. Please try again later.",
+      "analysis_waiting": "Waiting for analysis results...",
 
       "user_name": "USER NAME",
       "email": "EMAIL ADDRESS",
