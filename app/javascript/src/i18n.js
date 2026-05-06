@@ -37,6 +37,13 @@ const resources = {
       "analysis_server_error": "サーバーエラーが発生しました。時間を置いて再度お試しください。",
       "analysis_waiting": "解析結果を待機中...",
 
+      // ログ・グラフ用 (FocusChart)
+      "logs": {
+        "focus_level": "集中度",
+        "focus_trend": "集中度の推移",
+        "no_data": "ログデータがありません"
+      },
+
       // ラベル
       "user_name": "ユーザー名",
       "email": "メールアドレス",
@@ -130,6 +137,12 @@ const resources = {
       "analysis_loading": "AI is analyzing your session...",
       "analysis_server_error": "Server error occurred. Please try again later.",
       "analysis_waiting": "Waiting for analysis results...",
+
+      "logs": {
+        "focus_level": "Focus Level",
+        "focus_trend": "Focus Trend", 
+        "no_data": "No Log Data"
+      },
 
       "user_name": "USER NAME",
       "email": "EMAIL ADDRESS",

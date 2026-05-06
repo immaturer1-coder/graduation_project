@@ -5,7 +5,7 @@ import { createFocusRecord } from '../api/focus_records';
  * 集中管理のメインロジック
  * センサーのチャタリングやレンダリングによるタイマーの二重起動を徹底防止
  */
-export const useConcentrationLogic = (onComplete, getLatestLogs) => {
+export const useConcentrationLogic = (onComplete) => {
   const [phase, setPhase] = useState('mode_select'); 
   const [selectedMode, setSelectedMode] = useState(null);
   const [time, setTime] = useState({ h: 0, m: 25, s: 0 }); 
@@ -80,7 +80,8 @@ export const useConcentrationLogic = (onComplete, getLatestLogs) => {
     setShowReflection(true);
   }, [stopAllSideEffects, toggleAlarm]);
 
-  const handleFlip = useCallback((flipped) => {
+    // コンポーネント側の useSensorLogger から getLatestLogs を受け取れるように引数を追加
+  const handleFlip = useCallback((flipped, getLatestLogs) => {
     // 遷移中、または内省画面表示中は何もしない
     if (isTransitioningRef.current || showReflection) return;
 
@@ -95,11 +96,14 @@ export const useConcentrationLogic = (onComplete, getLatestLogs) => {
         totalFocusedSecondsRef.current = 0; 
       }
     } else if (phase === 'focusing') {
+      // 【重要】表を向いた瞬間に最新のログを確定させる
+      const currentLogs = getLatestLogs ? getLatestLogs() : [];
+
       const sessionData = {
         duration: totalFocusedSecondsRef.current,
         startedAt: startAtRef.current,
         mode: selectedMode,
-        logs: getLatestLogs ? getLatestLogs() : []
+        logs: currentLogs // 確定させたログをセット
       };
 
       if (isTimeUp) {
@@ -123,7 +127,7 @@ export const useConcentrationLogic = (onComplete, getLatestLogs) => {
         }, 3000);
       }
     }
-  }, [phase, isTimeUp, selectedMode, showReflection, getLatestLogs, startReflectionPhase, stopAllSideEffects]);
+  }, [phase, isTimeUp, selectedMode, showReflection, startReflectionPhase, stopAllSideEffects]);
 
   const handleReflectionSubmit = async (reflectionData) => {
     if (!pendingResult || isTransitioningRef.current === 'submitting') return;

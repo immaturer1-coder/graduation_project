@@ -4,11 +4,17 @@ class Api::FocusRecordsController < ApplicationController
 
   def create
     # --- 冪等性（二重保存）ガード ---
-    # 同一ユーザーが、同じ開始時刻（started_at）の記録を保存しようとした場合、
-    # 既に保存済みであればそのレコードを返して終了する。
     existing_record = current_user.focus_records.find_by(started_at: focus_record_params[:started_at])
     if existing_record
-      render json: { status: 'success', id: existing_record.id, message: 'already_saved' }, status: :ok
+      # 既に保存済みの場合は、そのレコードの詳細を返す
+      render json: { 
+        status: 'success', 
+        id: existing_record.id, 
+        message: 'already_saved',
+        motion_logs: existing_record.focus_record_details.first&.motion_logs,
+        duration_minutes: existing_record.duration_minutes,
+        focus_level: existing_record.focus_level
+      }, status: :ok
       return
     end
     # ----------------------------
@@ -17,7 +23,14 @@ class Api::FocusRecordsController < ApplicationController
     @focus_record = current_user.focus_records.build(formatted_params)
 
     if @focus_record.save
-      render json: { status: 'success', id: @focus_record.id }, status: :created
+      # 保存成功時に、フロントエンドのグラフ表示に必要なデータをすべて含めて返す
+      render json: { 
+        status: 'success', 
+        id: @focus_record.id,
+        motion_logs: @focus_record.focus_record_details.first&.motion_logs,
+        duration_minutes: @focus_record.duration_minutes,
+        focus_level: @focus_record.focus_level
+      }, status: :created
     else
       render json: { 
         status: 'error', 
