@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { BarChart2, MessageSquare, Zap, Clock, Loader2 } from 'lucide-react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { MessageSquare, Zap, Clock, Loader2 } from 'lucide-react';
 import { useAiAnalysis } from '../../hooks/useAiAnalysis';
 import { useTranslation } from 'react-i18next';
+import FocusChart from '../../components/FocusChart';
 
 /**
  * 分析詳細画面
@@ -17,13 +18,37 @@ const AnalysisPage = ({ focusData }) => {
   const { t } = useTranslation();
   const { runAnalysis, status, result, error } = useAiAnalysis();
 
+  // 無限ループ防止用の実行フラグ
+  const hasAnalyzed = useRef(false);
+
   // マウント時に AI 分析を実行
   useEffect(() => {
     const recordId = focusData?.id || focusData?.focus_record?.id;
-    if (recordId) {
+    // recordIdが存在し、かつ未実行の場合のみ実行
+    if (recordId && !hasAnalyzed.current) {
       runAnalysis(recordId);
+      hasAnalyzed.current = true;
     }
-  }, [focusData]);
+  }, [focusData, runAnalysis]);
+
+  // 1. センサーログの抽出とパースをメモ化（無限ループ防止の要）
+  const parsedLogs = useMemo(() => {
+    const rawLogs = 
+      focusData?.motion_logs || 
+      focusData?.logs || 
+      focusData?.focus_record?.motion_logs || 
+      focusData?.focus_record?.logs;
+    
+    if (!rawLogs) return [];
+    try {
+      // 参照が変わらないよう、パース結果を安定させる
+      const parsed = typeof rawLogs === 'string' ? JSON.parse(rawLogs) : rawLogs;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error("Failed to parse logs:", e);
+      return [];
+    }
+  }, [focusData]); // focusDataが変わらない限り、parsedLogsの参照を固定する
 
   // DBから取得した値を表示
   const displayScore = focusData?.focus_level || focusData?.focus_record?.focus_level || '--';
@@ -32,7 +57,7 @@ const AnalysisPage = ({ focusData }) => {
     ? `${Math.floor(rawMinutes)} ${t('min')}` 
     : `-- ${t('min')}`;
 
-  // AIメッセージの表示判定（JSONエラーなどの文字化け対策）
+  // AIメッセージの表示判定
   const getAiMessage = () => {
     if (status === 'loading') return t('analysis_loading');
     if (status === 'error') {
@@ -53,13 +78,21 @@ const AnalysisPage = ({ focusData }) => {
         </h2>
       </header>
 
-      {/* 曲線グラフ・プレースホルダー */}
-      <Card className="flex-1 min-h-[160px] flex flex-col items-center justify-center text-center space-y-2 border-dashed border-indigo-500/30 bg-indigo-500/5">
-        <div className="relative w-full h-full flex items-center justify-center">
-          <BarChart2 size={32} className="text-indigo-400 opacity-30 absolute" />
-          <p className="text-[9px] text-indigo-300 font-bold uppercase tracking-[0.2em] z-10">
-            {t('coming_soon_graph')}
+      {/* 曲線グラフ・セクション */}
+      <Card className="flex-1 min-h-[220px] flex flex-col p-4">
+        <div className="flex justify-between items-center mb-2">
+          <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em]">
+            {t('logs.focus_trend')}
           </p>
+          <span className="text-[8px] text-slate-600 font-mono">STABILITY_MONITOR</span>
+        </div>
+        {/* Chart.jsのエラー対策:
+            flex-1かつoverflow-hiddenに加え、h-fullを指定して親のサイズを確定させる。
+            リサイズループを防ぐため、コンテナのサイズ計算を安定させる。
+        */}
+        <div className="flex-1 w-full h-full min-h-0 overflow-hidden relative">
+          {/* メモ化された parsedLogs を渡す */}
+          <FocusChart logs={parsedLogs} />
         </div>
       </Card>
 

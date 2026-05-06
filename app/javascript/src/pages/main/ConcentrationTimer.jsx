@@ -25,10 +25,10 @@ import { useSensorLogger } from '../../hooks/useSensorLogger';
 const ConcentrationTimer = ({ onComplete }) => {
   const { t } = useTranslation();
   
-  // センサーログの取得のみを専門フックに委譲
-  const { getLatestLogs } = useSensorLogger();
-
   // ロジックの集約
+  // useConcentrationLogic は第1引数に onComplete のみを取る設計です
+  const logic = useConcentrationLogic(onComplete);
+
   const {
     phase, setPhase,
     selectedMode, setSelectedMode,
@@ -39,7 +39,11 @@ const ConcentrationTimer = ({ onComplete }) => {
     handleFlip,
     handleReflectionSubmit,
     pendingResult
-  } = useConcentrationLogic(onComplete, getLatestLogs);
+  } = logic;
+
+  // 1. センサーログの取得
+  // phase === 'focusing' の間だけアクティブにしてログを収集
+  const { getLatestLogs } = useSensorLogger(phase === 'focusing'); 
 
   // クイック選択のオプション
   const quickOptions = [
@@ -48,12 +52,7 @@ const ConcentrationTimer = ({ onComplete }) => {
     { label: '50', value: 50 },
   ];
 
-  /**
-   * クイック選択時のハンドラ
-   * ドラムロールのステート(h, m, s)を直接上書きして同期させる
-   */
   const handleQuickSelect = (minutes) => {
-    // 確実に新しいオブジェクトとしてセットし、秒もリセットする
     setTime({
       h: 0,
       m: minutes,
@@ -97,7 +96,6 @@ const ConcentrationTimer = ({ onComplete }) => {
             </button>
           </div>
 
-          {/* A. ドラムロール (最上部) */}
           <div className="flex justify-center gap-4">
             <DrumRoll 
               list={[...Array(24).keys()]} 
@@ -114,7 +112,6 @@ const ConcentrationTimer = ({ onComplete }) => {
             />
           </div>
 
-          {/* B. クイック選択チップ (中央) */}
           <div className="flex justify-between gap-2">
             {quickOptions.map((opt) => (
               <button
@@ -132,7 +129,6 @@ const ConcentrationTimer = ({ onComplete }) => {
             ))}
           </div>
 
-          {/* C. 確定ボタン (最下部) */}
           <PrimaryButton onClick={() => setPhase('waiting')} icon={ArrowRight}>
             {t('start_session')}
           </PrimaryButton>
@@ -142,8 +138,9 @@ const ConcentrationTimer = ({ onComplete }) => {
       {/* 3. 集中・計測フェーズ */}
       {(phase === 'waiting' || phase === 'focusing') && (
         <div className="flex flex-col items-center space-y-10 animate-in fade-in">
+          {/* 【重要】onFlipChange で handleFlip に getLatestLogs を渡すように修正 */}
           <FocusDetectionEngine 
-            onFlipChange={handleFlip} 
+            onFlipChange={(flipped) => handleFlip(flipped, getLatestLogs)} 
             active={!showReflection} 
             isWarning={isWarning} 
           />
@@ -162,6 +159,7 @@ const ConcentrationTimer = ({ onComplete }) => {
           <ReflectionForm
             isCompleted={pendingResult?.completed}
             totalSeconds={pendingResult?.duration}
+            motionLogs={pendingResult?.logs || []} // handleFlip時にスナップショットされたログを使用
             onSubmit={handleReflectionSubmit}
           />
         </div>
