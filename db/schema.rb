@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_23_000000) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_07_030253) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -35,6 +35,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_23_000000) do
     t.text "note"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "evaluation"
     t.index ["user_id"], name: "index_focus_records_on_user_id"
   end
 
