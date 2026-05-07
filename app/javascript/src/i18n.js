@@ -19,7 +19,7 @@ const resources = {
       "select_mode": "モードを選択",
       "timer_mode": "タイマーモード",
       "timer_mode_sub": "目標時間を設定",
-      "focus_mode": "フォーカスモード",
+      "focus_mode": "集中モード",
       "focus_mode_sub": "無制限に計測",
       "start_session": "計測開始",
       "hrs": "時",
@@ -27,7 +27,26 @@ const resources = {
       "status_focusing_msg": "集中計測中...",
       "status_complete_msg": "目標達成！端末を戻してください",
 
-      // 分析画面 (AnalysisPage) 用
+      // 履歴一覧
+      "history_title": "履歴一覧",
+      "loading_logs": "ログを読み込み中...",
+      "no_sessions": "セッション履歴がありません",
+
+      // 分析・履歴詳細 
+      "focus_report_header": "集中レポート詳細",
+      "detail_mode_label": "計測モード",
+      "detail_timer_label": "タイマー",
+      "detail_focus_label": "集中",
+      "focus_stability": "集中推移グラフ",
+      "score": "スコア",
+      "user_reflection": "振り返りメモ",
+      "no_motion_data": "モーションデータがありません",
+      "generating_chart": "グラフを生成中...",
+      "no_analysis_data": "解析データ待ち、または短いセッションのため解析をスキップしました。",
+      "no_reflection": "記録されたメモはありません",
+      "ai_analysis": "AI 解析レポート",
+
+      // 分析画面 
       "analysis_title": "分析レポート",
       "coming_soon_graph": "集中推移グラフ (準備中)",
       "ai_advisor_label": "AI アドバイザー",
@@ -107,73 +126,109 @@ const resources = {
       "insights_label": "気づき (任意)",
       "insights_placeholder": "今の気持ちや、次に活かしたいことを記入してください...",
       "save_analyze": "保存して分析",
-      "analyzing_session": "分析中..."
+      "analyzing_session": "分析中...",
+      "interrupted": "中断"
     }
   },
   en: {
     translation: {
+      // Header / Title
       "back": "Back",
-      "create_account": "CREATE ACCOUNT",
-      "welcome_back": "WELCOME BACK",
-      "reset_password_title": "RESET PASSWORD",
-      "reset_password_description": "Please enter your registered email address. We will send you instructions to reset your password.",
-      
+      "create_account": "Create Account",
+      "welcome_back": "Welcome Back",
+      "reset_password_title": "Reset Password",
+      "reset_password_description": "Enter your email address. We will send you instructions to reset your password.",
+
+      // Timer / Focus (Main screens)
       "select_mode": "Select Mode",
       "timer_mode": "Timer Mode",
-      "timer_mode_sub": "SET TARGET TIME",
+      "timer_mode_sub": "Set Target Time",
       "focus_mode": "Focus Mode",
-      "focus_mode_sub": "UNLIMITED TRACKING",
-      "start_session": "START SESSION",
+      "focus_mode_sub": "Unlimited Tracking",
+      "start_session": "Start Session",
       "hrs": "Hrs",
       "min": "Min",
       "status_focusing_msg": "Focusing...",
-      "status_complete_msg": "Target Completed! Pick up",
+      "status_complete_msg": "Target Completed! Please pick up your device.",
 
-      "analysis_title": "ANALYSIS",
+      // History Page 用に追加
+      "history_title": "History",
+      "loading_logs": "Loading focus logs...",
+      "no_sessions": "No Sessions Recorded",
+
+      // Analysis / Detail (HistoryDetailPage)
+      "focus_report_header": "FOCUS REPORT",
+      "detail_mode_label": "MEASUREMENT MODE",
+      "detail_timer_label": "TIMER",
+      "detail_focus_label": "FOCUS",
+      "session_analysis": "Session Analysis",
+      "focus_stability": "Focus Stability Trend",
+      "score": "Score",
+      "user_reflection": "User Reflection",
+      "no_motion_data": "No motion data available",
+      "generating_chart": "Generating chart...",
+      "no_analysis_data": "Waiting for data or session too short to analyze.",
+      "no_reflection": "No reflection notes recorded.",
+      "ai_analysis": "AI Analysis Report",
+
+      // Analysis Page
+      "analysis_title": "Analysis Report",
       "coming_soon_graph": "Focus Flow Graph (Coming Soon)",
       "ai_advisor_label": "AI Advisor",
       "score_label": "Score",
       "focus_time_label": "Focus Time",
-      "analysis_loading": "AI is analyzing your session...",
-      "analysis_server_error": "Server error occurred. Please try again later.",
-      "analysis_waiting": "Waiting for analysis results...",
+      "analysis_loading": "AI is analyzing focus data...",
+      "analysis_server_error": "Server error. Please try again later.",
+      "analysis_waiting": "Waiting for results...",
 
+      // Logs (FocusChart)
       "logs": {
         "focus_level": "Focus Level",
-        "focus_trend": "Focus Trend", 
-        "no_data": "No Log Data"
+        "focus_trend": "Focus Trend",
+        "no_data": "No log data available"
       },
 
-      "user_name": "USER NAME",
-      "email": "EMAIL ADDRESS",
-      "email_address": "EMAIL ADDRESS",
-      "password": "PASSWORD",
-      "confirm_password": "CONFIRM PASSWORD",
-      "placeholder_user": "Focus User",
-      "placeholder_email": "your@email.com",
+      // Labels
+      "user_name": "Username",
+      "email": "Email Address",
+      "email_address": "Email Address",
+      "password": "Password",
+      "confirm_password": "Confirm Password",
+
+      // Placeholders
+      "placeholder_user": "Enter username",
+      "placeholder_email": "Enter email address",
+
+      // Buttons / Links
       "sign_up": "Sign Up",
       "sign_in": "Sign In",
-      "forgot_password": "FORGOT PASSWORD?",
+      "forgot_password": "Forgot Password?",
       "dont_have_account": "Don't have an account?",
       "send_instructions": "Send Instructions",
-      "back_to_login": "Back to Log In",
+      "back_to_login": "Back to Login",
       "sending": "Sending...",
-      "sent_success_title": "SENT SUCCESSFULLY",
-      "sent_success_description": "We've sent reset instructions to {{email}}. Please check your inbox.",
-      "i_agree_to": "I agree to the",
+
+      // Success
+      "sent_success_title": "Sent Successfully",
+      "sent_success_description": "Instructions sent to {{email}}. Please check your inbox.",
+
+      // Legal
+      "i_agree_to": "I agree to:",
       "terms_of_service": "Terms of Service",
       "and": "and",
       "privacy_policy": "Privacy Policy",
-      "error_email_required": "Please enter your email",
-      "error_password_required": "Please enter your password",
-      "error_name_required": "Please enter your name",
-      "error_something_went_wrong": "Something went wrong. Please try again",
 
-      // AI Analysis related errors
-      "AI_ANALYSIS_ERROR": "An error occurred during AI analysis. Please try again later.",
+      // Validation
+      "error_email_required": "Email is required",
+      "error_password_required": "Password is required",
+      "error_name_required": "Name is required",
+      "error_something_went_wrong": "An error occurred. Please try again.",
+
+      // AI Errors
+      "AI_ANALYSIS_ERROR": "Error during AI analysis. Please try again later.",
       "ANALYSIS_FAILED": "Analysis failed",
       "UNEXPECTED_ERROR": "An unexpected error occurred",
-      "PROMPT_REQUIRED": "Prompt data is required",
+      "PROMPT_REQUIRED": "Insufficient data for analysis",
 
       // ReflectionForm
       "reflection_title": "REFLECTION",
@@ -186,7 +241,7 @@ const resources = {
       "evaluation_amazing": "Amazing",
       "status_label": "Status",
       "interruption_reason_label": "Interruption Reason",
-      "session_completed": "SESSION COMPLETED",
+      "session_completed": "Session Completed",
       "reason_notifications": "Notifications",
       "reason_phone_call": "Phone Call",
       "reason_involuntary": "Involuntary",
@@ -194,9 +249,10 @@ const resources = {
       "reason_fatigue": "Fatigue",
       "reason_other": "Other",
       "insights_label": "Insights (Optional)",
-      "insights_placeholder": "Write your thoughts here...",
+      "insights_placeholder": "Write your thoughts or future goals...",
       "save_analyze": "Save & Analyze",
-      "analyzing_session": "ANALYZING SESSION..."
+      "analyzing_session": "Analyzing...",
+      "interrupted": "Interrupted"
     }
   }
 };
