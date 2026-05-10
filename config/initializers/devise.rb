@@ -30,7 +30,7 @@ Devise.setup do |config|
   config.reset_password_within = 6.hours
 
   # ==> Navigation configuration
-  config.navigational_formats = ['*/*', :html]
+  config.navigational_formats = [:html]
 
   # ==> Hotwire/Turbo configuration
   config.responder.error_status = :unprocessable_entity

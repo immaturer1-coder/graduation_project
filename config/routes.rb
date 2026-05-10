@@ -1,22 +1,24 @@
 Rails.application.routes.draw do
-  # letter_opener_web のマウント
+  # 1. 開発用
   if Rails.env.development?
     mount LetterOpenerWeb::Engine, at: "/letter_opener"
   end
 
-  # Deviseの設定
+  get '/users/sign_in', to: 'static_pages#landing'
+  get '/users/sign_up', to: 'static_pages#landing'
+
+  # 2. Deviseの設定（API通信用として残す）
   devise_for :users, controllers: {
     sessions: 'users/sessions',
     registrations: 'users/registrations'
-  }, defaults: { format: :json }
+  }
 
-  # ルートパス設定
+  # 3. ルートパス設定
   root 'static_pages#landing'
 
+  # 4. APIエンドポイント
   namespace :api do
     resources :focus_records, only: [:create, :index, :show]
-
-    # AI分析用のルートを追加
     post 'ai_analysis/analyze', to: 'ai_analysis#analyze'
     
     namespace :v1 do
@@ -24,13 +26,12 @@ Rails.application.routes.draw do
     end
   end
 
-  # React Router / SPA 対策 
+  # 5. React Router / SPA 対策 
   get '*path', to: 'static_pages#landing', constraints: ->(req) {
     !req.xhr? &&
     req.format.html? &&
-    req.path.exclude?('/users') &&
     req.path.exclude?('/api') &&
-    req.path.exclude?('/letter_opener') && # ここに除外設定を追加
+    req.path.exclude?('/letter_opener') &&
     req.path.exclude?('/rails/active_storage')
   }
 end

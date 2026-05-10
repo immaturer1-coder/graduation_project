@@ -1,37 +1,48 @@
+// 共通設定済みの axiosInstance をインポート
+import axiosInstance from '../utils/axios';
+
 /**
- * CSRFトークンをメタタグから取得
+ * 集中記録に関する API 通信を管理するモジュール
  */
-const getCsrfToken = () => {
-  const meta = document.querySelector('meta[name="csrf-token"]');
-  return meta ? meta.getAttribute('content') : '';
+
+/**
+ * 全件取得
+ */
+export const fetchFocusRecords = async () => {
+  const response = await axiosInstance.get('/api/focus_records');
+  return response.data;
 };
 
 /**
- * 集中記録をRailsサーバーに送信して保存する
+ * 詳細取得
+ */
+export const fetchOneFocusRecord = async (id) => {
+  const response = await axiosInstance.get(`/api/focus_records/${id}`);
+  return response.data;
+};
+
+/**
+ * 集中記録を Rails サーバーに送信して保存する
  */
 export const createFocusRecord = async (data) => {
   if (!data || typeof data.duration === 'undefined') {
     throw new Error('Invalid focus record data');
   }
 
+  // 秒を分に変換 (Rails 側の duration_minutes 用)
   const durationInMinutes = data.duration / 60;
 
-  // RailsのAPI構造に合わせたペイロードの構築
+  // ペイロードの構築
   const payload = {
     focus_record: {
       mode: data.mode || 'timer',
       started_at: data.startedAt,
       ended_at: new Date().toISOString(),
       duration_minutes: parseFloat(durationInMinutes.toFixed(2)), 
-      // focus_level はスコア（PTS）
       focus_level: data.focus_level || 0,
-      // evaluation は顔文字(1-5)
       evaluation: data.evaluation || data.self_evaluation || 3,
-      // 中断理由の判定: ReflectionForm側で詳細が選ばれていればそれを優先
       stop_reason: data.stop_reason || data.interruption_reason || (data.interrupted ? 'interrupted' : 'completed'),
-      // メモ
       note: data.note || data.reflection_note || '',
-      
       focus_record_details_attributes: [
         {
           is_finished: data.completed,
@@ -42,29 +53,51 @@ export const createFocusRecord = async (data) => {
   };
 
   try {
-    const response = await fetch('/api/focus_records', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-CSRF-Token': getCsrfToken()
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      const errorMessage = result.errors 
-        ? (Array.isArray(result.errors) ? result.errors.join(', ') : JSON.stringify(result.errors))
-        : (result.message || 'Server error occurred');
-      
-      throw new Error(errorMessage);
-    }
-
-    return result;
+    const response = await axiosInstance.post('/api/focus_records', payload);
+    return response.data;
   } catch (error) {
-    console.error('[API Error] Focus record creation failed:', error);
-    throw error;
+    const errorMessage = error.response?.data?.errors 
+      ? (Array.isArray(error.response.data.errors) ? error.response.data.errors.join(', ') : JSON.stringify(error.response.data.errors))
+      : (error.response?.data?.message || error.message || 'Server error occurred');
+    
+    console.error('[API Error] Focus record creation failed:', errorMessage);
+    throw new Error(errorMessage);
   }
 };
+
+/**
+ * AI分析の実行
+ */
+export const analyzeFocusRecord = async (id) => {
+  const response = await axiosInstance.post(`/api/ai_analysis/${id}`);
+  return response.data;
+};
+
+/**
+ * 振り返りの更新
+ */
+export const updateFocusRecord = async (id, data) => {
+  const payload = { focus_record: data };
+  const response = await axiosInstance.patch(`/api/focus_records/${id}`, payload);
+  return response.data;
+};
+
+/**
+ * 削除
+ */
+export const deleteFocusRecord = async (id) => {
+  const response = await axiosInstance.delete(`/api/focus_records/${id}`);
+  return response.data;
+};
+
+// 互換性のため、オブジェクトにまとめたデフォルトエクスポートも維持します
+const focusRecordsApi = {
+  fetchAll: fetchFocusRecords,
+  fetchOne: fetchOneFocusRecord,
+  create: createFocusRecord,
+  analyze: analyzeFocusRecord,
+  update: updateFocusRecord,
+  delete: deleteFocusRecord
+};
+
+export default focusRecordsApi;

@@ -1,17 +1,16 @@
 class Api::FocusRecordsController < ApplicationController
   before_action :authenticate_user!
-  skip_before_action :verify_authenticity_token
 
   def index
     @focus_records = current_user.focus_records
-                                .includes(:focus_record_details, :hints)
-                                .order(created_at: :desc)
+                                 .includes(:focus_record_details, :hints)
+                                 .order(created_at: :desc)
     
     render json: @focus_records.as_json(include: [:focus_record_details, :hints])
   end
 
   def create
-    # 冪等性ガード
+    # 冪等性ガード：started_at 重複チェック（既存ロジックを維持）
     existing_record = current_user.focus_records.find_by(started_at: focus_record_params[:started_at])
     if existing_record
       render json: { 
@@ -24,12 +23,12 @@ class Api::FocusRecordsController < ApplicationController
       return
     end
 
+    # パラメータのフォーマット処理（既存ロジックを維持）
     formatted_params = format_focus_record_params(focus_record_params)
     @focus_record = current_user.focus_records.build(formatted_params)
 
     if @focus_record.save
       # 保存成功時に詳細情報を返す
-      # detailのmotion_logsをパースしてフロントに返す
       motion_logs = @focus_record.focus_record_details.first&.motion_logs
       
       render json: { 
