@@ -32,6 +32,7 @@ Rails.application.routes.draw do
     req.format.html? &&
     req.path.exclude?('/api') &&
     req.path.exclude?('/letter_opener') &&
-    req.path.exclude?('/rails/active_storage')
+    !req.path.start_with?('/rails/active_storage') &&
+    !req.path.include?('.')
   }
 end
