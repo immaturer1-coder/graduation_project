@@ -9,15 +9,25 @@ import App from './src/components/App';
 // i18n の設定ファイルをインポート
 import './src/i18n';
 
+// グローバル変数でRootを保持し、二重初期化を防ぐ
+window.reactRoot = window.reactRoot || null;
+
 document.addEventListener('turbo:load', () => {
   const container = document.getElementById('root');
+  
   if (container) {
-    const root = createRoot(container);
-    // resources 内に翻訳データを直書きしているため、Suspense なしで即時レンダリング可能
-    root.render(
+    if (!window.reactRoot) {
+      window.reactRoot = createRoot(container);
+    }
+    
+    window.reactRoot.render(
       <React.StrictMode>
         <App />
       </React.StrictMode>
     );
   }
+});
+
+// ページ遷移の直前にクリーンアップ
+document.addEventListener('turbo:before-cache', () => {
 });

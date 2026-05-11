@@ -8,6 +8,27 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
   ja: {
     translation: {
+      // ランディングページ
+      "lp_hero_subtitle": "スマートフォンの「裏返し」をスイッチに、<br />深い集中状態へのルーティンを。",
+      "get_started": "はじめる",
+      "log_in": "ログイン",
+      "lp_slide_1": {
+        "title": "1. タイマー設定",
+        "description": "集中したい目標時間をセット。無理のない範囲から始めましょう。"
+      },
+      "lp_slide_2": {
+        "title": "2. スマホを裏返す",
+        "description": "デバイスを置いた瞬間、計測スタート。通知を遮断し、自分だけの時間へ。"
+      },
+      "lp_slide_3": {
+        "title": "3. AIが分析",
+        "description": "高度なセンサー解析で集中の深さを可視化。AIがあなたの質を評価します。"
+      },
+      "lp_slide_4": {
+        "title": "4. ルーティンへ",
+        "description": "日々の集中を記録し、最適な作業リズムを構築。理想の習慣を手に入れよう。"
+      },
+
       // ヘッダー・タイトル
       "back": "戻る",
       "create_account": "アカウント作成",
@@ -132,6 +153,27 @@ const resources = {
   },
   en: {
     translation: {
+      // Landing Page
+      "lp_hero_subtitle": "Flip your phone to switch on focus,<br />and build your routine for deep concentration.",
+      "get_started": "Get Started",
+      "log_in": "Log In",
+      "lp_slide_1": {
+        "title": "1. Set Timer",
+        "description": "Set your target time to focus. Start with a manageable range."
+      },
+      "lp_slide_2": {
+        "title": "2. Flip Your Phone",
+        "description": "The moment you put it down, tracking begins. Block notifications and enter your own time."
+      },
+      "lp_slide_3": {
+        "title": "3. AI Analysis",
+        "description": "Visualize your focus depth with advanced sensor analysis. AI evaluates your quality."
+      },
+      "lp_slide_4": {
+        "title": "4. Make it a Routine",
+        "description": "Record daily focus and build an optimal work rhythm. Get your ideal habits."
+      },
+
       // Header / Title
       "back": "Back",
       "create_account": "Create Account",
@@ -151,17 +193,16 @@ const resources = {
       "status_focusing_msg": "Focusing...",
       "status_complete_msg": "Target Completed! Please pick up your device.",
 
-      // History Page 用に追加
+      // History Page
       "history_title": "History",
       "loading_logs": "Loading focus logs...",
       "no_sessions": "No Sessions Recorded",
 
-      // Analysis / Detail (HistoryDetailPage)
+      // Analysis / Detail
       "focus_report_header": "FOCUS REPORT",
       "detail_mode_label": "MEASUREMENT MODE",
       "detail_timer_label": "TIMER",
       "detail_focus_label": "FOCUS",
-      "session_analysis": "Session Analysis",
       "focus_stability": "Focus Stability Trend",
       "score": "Score",
       "user_reflection": "User Reflection",
@@ -181,7 +222,7 @@ const resources = {
       "analysis_server_error": "Server error. Please try again later.",
       "analysis_waiting": "Waiting for results...",
 
-      // Logs (FocusChart)
+      // Logs
       "logs": {
         "focus_level": "Focus Level",
         "focus_trend": "Focus Trend",
