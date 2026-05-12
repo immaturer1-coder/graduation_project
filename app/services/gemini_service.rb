@@ -2,9 +2,12 @@ class GeminiService
   require 'net/http'
   require 'json'
 
-  API_VERSION = "v1beta"
-  MODEL_NAME = "models/gemini-flash-latest"
-  BASE_URL = "https://generativelanguage.googleapis.com/#{API_VERSION}/#{MODEL_NAME}:generateContent"
+  # 本番環境（Render/Oregon）での動作が確認された安定版設定
+  # IRBでの疎通テストにも成功したため、この構成を採用しました
+  # v1 エンドポイントと gemini-2.5-flash モデルの組み合わせを採用しています
+  API_VERSION = "v1"
+  MODEL_NAME = "gemini-2.5-flash"
+  BASE_URL = "https://generativelanguage.googleapis.com/#{API_VERSION}/models/#{MODEL_NAME}:generateContent"
 
   # Rails Credentials を最優先し、次に環境変数を参照する設計
   def initialize(api_key = nil)
@@ -14,7 +17,7 @@ class GeminiService
   # PUBLIC: 汎用コンテンツ生成メソッド
   def generate_content(prompt, system_instruction = nil)
     if @api_key.blank?
-      raise "Gemini API Key is missing. Please set 'gemini: api_key' in credentials.yml.enc using Docker command."
+      raise "Gemini API Key is missing. Please set 'gemini: api_key' in credentials.yml.enc or Environment Variables."
     end
 
     execute_api_call(prompt, system_instruction)
@@ -42,6 +45,9 @@ class GeminiService
 
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
+    
+    # AIの生成時間を考慮し、余裕を持ったタイムアウト設定を維持
+    http.open_timeout = 10
     http.read_timeout = 30 
     
     request = Net::HTTP::Post.new(uri.request_uri, { 'Content-Type' => 'application/json' })
@@ -66,7 +72,9 @@ class GeminiService
     when "429"
       raise "Gemini API Quota Exceeded (429): Too many requests."
     when "404"
-      raise "Gemini API Model Not Found (404): Check MODEL_NAME or API_VERSION."
+      raise "Gemini API Model Not Found (404): Check MODEL_NAME(#{MODEL_NAME}) or API_VERSION(#{API_VERSION})."
+    when "403"
+      raise "Gemini API Permission/Location Error (403): #{response.body}"
     else
       raise "Gemini API Error #{response.code}: #{response.body}"
     end
