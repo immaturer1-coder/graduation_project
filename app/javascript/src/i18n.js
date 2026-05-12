@@ -48,6 +48,12 @@ const resources = {
       "status_focusing_msg": "集中計測中...",
       "status_complete_msg": "目標達成！端末を戻してください",
 
+      // センサーエンジン (FocusDetectionEngine)
+      "warning_title": "スマホを裏返して\nください！",
+      "warning_subtitle": "{{count}}秒後に終了...",
+      "engine_status_active": "計測中",
+      "instruction_flip_to_start": "スマホを裏返すと\n計測開始",
+
       // 履歴一覧
       "history_title": "履歴一覧",
       "loading_logs": "ログを読み込み中...",
@@ -192,6 +198,12 @@ const resources = {
       "min": "Min",
       "status_focusing_msg": "Focusing...",
       "status_complete_msg": "Target Completed! Please pick up your device.",
+
+      // Sensor Engine (FocusDetectionEngine)
+      "warning_title": "Return Device!",
+      "warning_subtitle": "Penalty in {{count}}s...",
+      "engine_status_active": "Monitoring",
+      "instruction_flip_to_start": "Flip Device",
 
       // History Page
       "history_title": "History",
