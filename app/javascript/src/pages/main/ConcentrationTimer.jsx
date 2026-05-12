@@ -26,8 +26,10 @@ const ConcentrationTimer = ({ onComplete }) => {
   const { t } = useTranslation();
   
   // ロジックの集約
-  // useConcentrationLogic は第1引数に onComplete のみを取る設計です
   const logic = useConcentrationLogic(onComplete);
+
+  // logicが取得できるまでのガード
+  if (!logic) return null;
 
   const {
     phase, setPhase,
@@ -41,11 +43,10 @@ const ConcentrationTimer = ({ onComplete }) => {
     pendingResult
   } = logic;
 
-  // 1. センサーログの取得
-  // phase === 'focusing' の間だけアクティブにしてログを収集
+  // 1. センサーログの取得（focusingフェーズの間のみアクティブ）
   const { getLatestLogs } = useSensorLogger(phase === 'focusing'); 
 
-  // クイック選択のオプション
+  // クイック選択
   const quickOptions = [
     { label: '15', value: 15 },
     { label: '25', value: 25 },
@@ -53,32 +54,40 @@ const ConcentrationTimer = ({ onComplete }) => {
   ];
 
   const handleQuickSelect = (minutes) => {
-    setTime({
-      h: 0,
-      m: minutes,
-      s: 0
-    });
+    setTime({ h: 0, m: minutes, s: 0 });
+  };
+
+  const startFocusMode = () => {
+    setSelectedMode('focus');
+    setTime({ h: 0, m: 0, s: 0 });
+    setPhase('waiting');
+  };
+
+  const startTimerSetup = () => {
+    setSelectedMode('timer');
+    setTime({ h: 0, m: 0, s: 0 });
+    setPhase('timer_setup');
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center text-slate-100 p-6 bg-slate-950">
+    <div className="w-full h-full flex flex-col items-center justify-center text-slate-100 p-6 bg-slate-950 overflow-hidden relative">
       
-      {/* 1. モード選択 */}
+      {/* モード選択フェーズ */}
       {phase === 'mode_select' && (
-        <div className="w-full max-w-xs space-y-4 animate-in fade-in">
+        <div className="w-full max-w-xs space-y-4 animate-in fade-in zoom-in-95 duration-300">
           <div className="text-center mb-6">
             <h2 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] italic">Routine</h2>
             <p className="text-white font-bold text-lg italic">{t('select_mode')}</p>
           </div>
           <ModeButton 
-            onClick={() => { setSelectedMode('timer'); setPhase('timer_setup'); }}
+            onClick={startTimerSetup}
             icon={<Timer size={24} />}
             title={t('timer_mode')}
             subtitle={t('timer_mode_sub')}
             colorClass="text-indigo-400 bg-indigo-500/10"
           />
           <ModeButton 
-            onClick={() => { setSelectedMode('focus'); setPhase('waiting'); }}
+            onClick={startFocusMode}
             icon={<Zap size={24} />}
             title={t('focus_mode')}
             subtitle={t('focus_mode_sub')}
@@ -87,7 +96,7 @@ const ConcentrationTimer = ({ onComplete }) => {
         </div>
       )}
 
-      {/* 2. タイマー設定 */}
+      {/* タイマー設定フェーズ */}
       {phase === 'timer_setup' && (
         <div className="w-full max-w-xs space-y-8 animate-in slide-in-from-right duration-300">
           <div className="flex items-center justify-start">
@@ -99,14 +108,14 @@ const ConcentrationTimer = ({ onComplete }) => {
           <div className="flex justify-center gap-4">
             <DrumRoll 
               list={[...Array(24).keys()]} 
-              value={time.h} 
+              value={time?.h || 0} 
               onChange={v => setTime(p => ({ ...p, h: v, s: 0 }))} 
               label={t('hrs')} 
             />
             <div className="pt-6 text-2xl font-black text-indigo-500">:</div>
             <DrumRoll 
               list={[...Array(60).keys()]} 
-              value={time.m} 
+              value={time?.m || 0} 
               onChange={v => setTime(p => ({ ...p, m: v, s: 0 }))} 
               label={t('min')} 
             />
@@ -118,7 +127,7 @@ const ConcentrationTimer = ({ onComplete }) => {
                 key={opt.value}
                 onClick={() => handleQuickSelect(opt.value)}
                 className={`flex-1 py-3 px-2 rounded-2xl bg-slate-900 border transition-all ${
-                  time.m === opt.value && time.h === 0 
+                  time?.m === opt.value && time?.h === 0 
                   ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/50 scale-[1.02]' 
                   : 'border-slate-800 hover:border-slate-700 shadow-sm active:scale-95'
                 }`}
@@ -129,16 +138,22 @@ const ConcentrationTimer = ({ onComplete }) => {
             ))}
           </div>
 
-          <PrimaryButton onClick={() => setPhase('waiting')} icon={ArrowRight}>
+          <PrimaryButton 
+            onClick={() => {
+              if (time?.h === 0 && time?.m === 0) return;
+              setPhase('waiting');
+            }} 
+            icon={ArrowRight}
+            disabled={time?.h === 0 && time?.m === 0}
+          >
             {t('start_session')}
           </PrimaryButton>
         </div>
       )}
 
-      {/* 3. 集中・計測フェーズ */}
-      {(phase === 'waiting' || phase === 'focusing') && (
-        <div className="flex flex-col items-center space-y-10 animate-in fade-in">
-          {/* 【重要】onFlipChange で handleFlip に getLatestLogs を渡すように修正 */}
+      {/* 待機・集中フェーズ */}
+      {(phase === 'waiting' || phase === 'focusing') && !showReflection && (
+        <div className="flex flex-col items-center space-y-10 animate-in fade-in duration-500">
           <FocusDetectionEngine 
             onFlipChange={(flipped) => handleFlip(flipped, getLatestLogs)} 
             active={!showReflection} 
@@ -153,13 +168,13 @@ const ConcentrationTimer = ({ onComplete }) => {
         </div>
       )}
 
-      {/* 4. 振り返り入力フォーム */}
+      {/* 振り返りフォーム（オーバーレイ） */}
       {showReflection && (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300">
           <ReflectionForm
             isCompleted={pendingResult?.completed}
             totalSeconds={pendingResult?.duration}
-            motionLogs={pendingResult?.logs || []} // handleFlip時にスナップショットされたログを使用
+            motionLogs={pendingResult?.logs || []}
             onSubmit={handleReflectionSubmit}
           />
         </div>
@@ -168,31 +183,40 @@ const ConcentrationTimer = ({ onComplete }) => {
   );
 };
 
+// サブコンポーネント: モード選択ボタン
 const ModeButton = ({ onClick, icon, title, subtitle, colorClass }) => (
-  <button onClick={onClick} className="w-full flex items-center gap-4 bg-slate-900 border border-slate-800 p-5 rounded-3xl active:scale-95 transition-all text-left">
+  <button onClick={onClick} className="w-full flex items-center gap-4 bg-slate-900 border border-slate-800 p-5 rounded-3xl active:scale-95 transition-all text-left hover:border-slate-700">
     <div className={`p-3 rounded-2xl ${colorClass}`}>{icon}</div>
     <div>
-      <p className="font-black italic text-sm">{title}</p>
+      <p className="font-black italic text-sm text-slate-100">{title}</p>
       <p className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em]">{subtitle}</p>
     </div>
   </button>
 );
 
+// サブコンポーネント: ステータスバッジ
 const StatusBadge = ({ isTimeUp, t }) => (
-  <div className={`px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mx-auto w-fit ${
-    isTimeUp ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400 animate-pulse' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+  <div className={`px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mx-auto w-fit transition-colors ${
+    isTimeUp ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400 animate-pulse' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
   }`}>
     {isTimeUp ? <CheckCircle2 size={12} /> : <Loader2 size={12} className="animate-spin" />}
     {isTimeUp ? t('status_complete_msg') : t('status_focusing_msg')}
   </div>
 );
 
-const TimeDisplay = ({ time }) => (
-  <div className="text-7xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-2xl">
-    {time.h > 0 && `${time.h.toString().padStart(2, '0')}:`}
-    {time.m.toString().padStart(2, '0')}:
-    {time.s.toString().padStart(2, '0')}
-  </div>
-);
+// サブコンポーネント: 時間表示
+const TimeDisplay = ({ time }) => {
+  const h = time?.h || 0;
+  const m = time?.m || 0;
+  const s = time?.s || 0;
+  
+  return (
+    <div className="text-7xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-2xl">
+      {h > 0 && `${h.toString().padStart(2, '0')}:`}
+      {m.toString().padStart(2, '0')}:
+      {s.toString().padStart(2, '0')}
+    </div>
+  );
+};
 
 export default ConcentrationTimer;
