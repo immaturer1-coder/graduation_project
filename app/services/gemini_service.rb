@@ -3,8 +3,13 @@ class GeminiService
   require 'json'
 
   # 本番環境（Render/Oregon）での動作が確認された安定版設定
+<<<<<<< Updated upstream
   # IRBでの疎通テストにも成功したため、この構成を採用しました
   # v1 エンドポイントと gemini-2.5-flash モデルの組み合わせを採用しています
+=======
+  # v1 エンドポイントにおいてパラメータの互換性を高めるため、
+  # システム指示はプロンプトに統合して送信する構成を採用しました
+>>>>>>> Stashed changes
   API_VERSION = "v1"
   MODEL_NAME = "gemini-2.5-flash"
   BASE_URL = "https://generativelanguage.googleapis.com/#{API_VERSION}/models/#{MODEL_NAME}:generateContent"
@@ -15,33 +20,31 @@ class GeminiService
   end
 
   # PUBLIC: 汎用コンテンツ生成メソッド
-  def generate_content(prompt, system_instruction = nil)
+  def generate_content(prompt, _unused_instruction = nil)
     if @api_key.blank?
       raise "Gemini API Key is missing. Please set 'gemini: api_key' in credentials.yml.enc or Environment Variables."
     end
 
-    execute_api_call(prompt, system_instruction)
+    execute_api_call(prompt)
   end
 
   # PUBLIC: 集中セッション分析専用メソッド
   def analyze_session(motion_summary, reflection)
-    prompt = "以下を分析してください:\n動作サマリー: #{motion_summary}\n内省内容: #{reflection}"
     system_instruction = "あなたは集中力解析の専門家です。ユーザーの動作と内省を比較し、客観的な分析を提供してください。"
-    generate_content(prompt, system_instruction)
+    combined_prompt = "#{system_instruction}\n\n以下を分析してください:\n動作サマリー: #{motion_summary}\n内省内容: #{reflection}"
+    
+    generate_content(combined_prompt)
   end
 
   private
 
-  def execute_api_call(prompt, system_instruction)
+  def execute_api_call(prompt)
     uri = URI("#{BASE_URL}?key=#{@api_key}")
     
+    # v1 エンドポイントで確実に受け入れられる contents 構造のみを使用します
     payload = {
       contents: [{ parts: [{ text: prompt }] }]
     }
-    
-    if system_instruction.present?
-      payload[:systemInstruction] = { parts: [{ text: system_instruction }] }
-    end
 
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
@@ -69,6 +72,8 @@ class GeminiService
       result = JSON.parse(response.body)
       text = result.dig('candidates', 0, 'content', 'parts', 0, 'text')
       text || raise("Gemini API Error: Content not found in response.")
+    when "400"
+      raise "Gemini API Bad Request (400): #{response.body}"
     when "429"
       raise "Gemini API Quota Exceeded (429): Too many requests."
     when "404"
