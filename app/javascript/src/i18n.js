@@ -8,6 +8,13 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
   ja: {
     translation: {
+      // ナビゲーションラベル
+      "nav_timer": "タイマー",
+      "nav_analysis": "分析",
+      "nav_history": "履歴",
+      "nav_settings": "設定",
+      "nav_logout": "ホーム",
+
       // ランディングページ
       "lp_hero_subtitle": "スマートフォンの「裏返し」をスイッチに、<br />深い集中状態へのルーティンを。",
       "get_started": "はじめる",
@@ -159,6 +166,13 @@ const resources = {
   },
   en: {
     translation: {
+      // Nav Labels
+      "nav_timer": "Timer",
+      "nav_analysis": "Analysis",
+      "nav_history": "History",
+      "nav_settings": "Settings",
+      "nav_logout": "Logout",
+
       // Landing Page
       "lp_hero_subtitle": "Flip your phone to switch on focus,<br />and build your routine for deep concentration.",
       "get_started": "Get Started",
