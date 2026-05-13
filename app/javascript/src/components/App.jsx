@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { LayoutDashboard, History, Settings, LogOut, ChevronRight, Activity, Timer } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // API & UI Components
 import { createFocusRecord } from '../api/focus_records';
@@ -20,54 +21,91 @@ import ConcentrationTimer from '../pages/main/ConcentrationTimer';
 /**
  * 認証後の共通レイアウト
  */
-const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout }) => (
-  <div className="fixed inset-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
-    <main className="flex-1 p-5 max-w-md mx-auto w-full overflow-hidden relative">{children}</main>
-    <nav className="bg-slate-900/90 backdrop-blur-xl border-t border-slate-800 px-8 py-4 flex justify-between items-center">
-      <button onClick={() => setCurrentPage('timer')} className={`p-2 ${currentPage === 'timer' ? 'text-indigo-400' : 'text-slate-600'}`}><Timer size={24} /></button>
-      <button onClick={() => setCurrentPage('analysis')} className={`p-2 ${currentPage === 'analysis' ? 'text-indigo-400' : 'text-slate-600'}`}><LayoutDashboard size={24} /></button>
-      <button onClick={() => setCurrentPage('history')} className={`p-2 ${currentPage === 'history' ? 'text-indigo-400' : 'text-slate-600'}`}><History size={24} /></button>
-      <button onClick={() => setCurrentPage('settings')} className={`p-2 ${['settings', 'terms', 'privacy', 'focus-test'].includes(currentPage) ? 'text-indigo-400' : 'text-slate-600'}`}><Settings size={24} /></button>
-      <button onClick={onLogout} className="p-2 text-slate-600 hover:text-rose-400"><LogOut size={24} /></button>
-    </nav>
-  </div>
-);
+const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout }) => {
+  const { t } = useTranslation();
+  
+  return (
+    <div className="fixed inset-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
+      <main className="flex-1 p-5 max-w-md mx-auto w-full overflow-hidden relative">{children}</main>
+      <nav className="bg-slate-900/90 backdrop-blur-xl border-t border-slate-800 px-4 py-3 flex justify-between items-center">
+        <button 
+          onClick={() => setCurrentPage('timer')} 
+          className={`flex flex-col items-center gap-1 flex-1 ${currentPage === 'timer' ? 'text-indigo-400' : 'text-slate-600'}`}
+        >
+          <Timer size={22} />
+          <span className="text-[10px] font-bold">{t('nav_timer')}</span>
+        </button>
+        <button 
+          onClick={() => setCurrentPage('analysis')} 
+          className={`flex flex-col items-center gap-1 flex-1 ${currentPage === 'analysis' ? 'text-indigo-400' : 'text-slate-600'}`}
+        >
+          <LayoutDashboard size={22} />
+          <span className="text-[10px] font-bold">{t('nav_analysis')}</span>
+        </button>
+        <button 
+          onClick={() => setCurrentPage('history')} 
+          className={`flex flex-col items-center gap-1 flex-1 ${currentPage === 'history' ? 'text-indigo-400' : 'text-slate-600'}`}
+        >
+          <History size={22} />
+          <span className="text-[10px] font-bold">{t('nav_history')}</span>
+        </button>
+        <button 
+          onClick={() => setCurrentPage('settings')} 
+          className={`flex flex-col items-center gap-1 flex-1 ${['settings', 'terms', 'privacy', 'focus-test'].includes(currentPage) ? 'text-indigo-400' : 'text-slate-600'}`}
+        >
+          <Settings size={22} />
+          <span className="text-[10px] font-bold">{t('nav_settings')}</span>
+        </button>
+        <button 
+          onClick={onLogout} 
+          className="flex flex-col items-center gap-1 flex-1 text-slate-600 hover:text-rose-400"
+        >
+          <LogOut size={22} />
+          <span className="text-[10px] font-bold">{t('nav_logout')}</span>
+        </button>
+      </nav>
+    </div>
+  );
+};
 
 /**
  * 設定画面
  */
-const SettingsPage = ({ onNavigate }) => (
-  <div className="animate-in fade-in duration-500">
-    <h2 className="text-xl font-black italic uppercase tracking-tighter mb-6 text-indigo-400">Settings</h2>
-    <div className="space-y-3">
-      <button
-        onClick={() => onNavigate('focus-test')}
-        className="w-full text-left p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-sm font-bold flex justify-between items-center group active:bg-indigo-500/20 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <Activity size={18} className="text-indigo-400" />
-          <span>Focus Detection Test (Beta)</span>
-        </div>
-        <ChevronRight size={18} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
-      </button>
+const SettingsPage = ({ onNavigate }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="animate-in fade-in duration-500">
+      <h2 className="text-xl font-black italic uppercase tracking-tighter mb-6 text-indigo-400">Settings</h2>
+      <div className="space-y-3">
+        <button
+          onClick={() => onNavigate('focus-test')}
+          className="w-full text-left p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-sm font-bold flex justify-between items-center group active:bg-indigo-500/20 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Activity size={18} className="text-indigo-400" />
+            <span>Focus Detection Test (Beta)</span>
+          </div>
+          <ChevronRight size={18} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
+        </button>
 
-      <button
-        onClick={() => onNavigate('terms')}
-        className="w-full text-left p-4 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold flex justify-between items-center group active:bg-slate-800 transition-colors"
-      >
-        <span>Terms of Service</span>
-        <ChevronRight size={18} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
-      </button>
-      <button
-        onClick={() => onNavigate('privacy')}
-        className="w-full text-left p-4 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold flex justify-between items-center group active:bg-slate-800 transition-colors"
-      >
-        <span>Privacy Policy</span>
-        <ChevronRight size={18} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
-      </button>
+        <button
+          onClick={() => onNavigate('terms')}
+          className="w-full text-left p-4 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold flex justify-between items-center group active:bg-slate-800 transition-colors"
+        >
+          <span>{t('terms_of_service')}</span>
+          <ChevronRight size={18} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
+        </button>
+        <button
+          onClick={() => onNavigate('privacy')}
+          className="w-full text-left p-4 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold flex justify-between items-center group active:bg-slate-800 transition-colors"
+        >
+          <span>{t('privacy_policy')}</span>
+          <ChevronRight size={18} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('landing');
@@ -77,11 +115,22 @@ export default function App() {
   
   // 保存された最新の集中データを保持する state を追加
   const [currentFocusData, setCurrentFocusData] = useState(null);
+  
+  // 履歴画面のリセット用
+  const [historyKey, setHistoryKey] = useState(0);
 
   const audioRef = useRef(null);
 
   const navigate = (page) => {
     setHistory(prev => [...prev, currentPage]);
+    setCurrentPage(page);
+  };
+
+  const handlePageChange = (page) => {
+    if (page === 'history' && currentPage === 'history') {
+      // 履歴画面で履歴ボタンが押されたらリマウントして一覧に戻す
+      setHistoryKey(prev => prev + 1);
+    }
     setCurrentPage(page);
   };
 
@@ -155,12 +204,12 @@ export default function App() {
       case 'reset':   return <ResetPasswordPage onNavigate={navigate} />;
       case 'terms':   return <TermsPage onNavigate={goBack} />;
       case 'privacy': return <PrivacyPage onNavigate={goBack} />;
-      default:        return <LandingPage onNavigate={navigate} />;
+      default:         return <LandingPage onNavigate={navigate} />;
     }
   }
 
   return (
-    <AuthenticatedLayout currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout}>
+    <AuthenticatedLayout currentPage={currentPage} setCurrentPage={handlePageChange} onLogout={handleLogout}>
       {isSaving && <LoadingOverlay message="Analyzing Session..." />}
 
       <audio
@@ -184,7 +233,7 @@ export default function App() {
         />
       )}
       
-      {currentPage === 'history' && <HistoryPage />}
+      {currentPage === 'history' && <HistoryPage key={historyKey} />}
       {currentPage === 'settings' && <SettingsPage onNavigate={navigate} />}
 
       {currentPage === 'focus-test' && (
