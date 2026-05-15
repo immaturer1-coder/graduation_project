@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { LayoutDashboard, History, Settings, LogOut, ChevronRight, Activity, Timer } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { LayoutDashboard, History, Settings, LogOut, ChevronRight, Activity, Timer, Monitor, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // API & UI Components
@@ -17,52 +17,111 @@ import AnalysisPage from '../pages/main/AnalysisPage';
 import HistoryPage from '../pages/main/HistoryPage';
 import FocusDetectionPage from '../pages/main/FocusDetectionPage';
 import ConcentrationTimer from '../pages/main/ConcentrationTimer';
+import PcLinkPage from '../pages/main/PcLinkPage';
 
 /**
  * 認証後の共通レイアウト
  */
-const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout }) => {
+const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, isPc }) => {
   const { t } = useTranslation();
   
+  const navItems = [
+    { id: 'pc-link', icon: Monitor, label: 'PC Link' },
+    { id: 'timer', icon: Timer, label: t('nav_timer') },
+    { id: 'analysis', icon: LayoutDashboard, label: t('nav_analysis') },
+    { id: 'history', icon: History, label: t('nav_history') },
+    { id: 'settings', icon: Settings, label: t('nav_settings') },
+  ];
+
+  // スマホ用ナビゲーション定義
+  const mobileNavItems = [
+    { id: 'timer', icon: Timer, label: t('nav_timer') },
+    { id: 'analysis', icon: LayoutDashboard, label: t('nav_analysis') },
+    { id: 'history', icon: History, label: t('nav_history') },
+    { id: 'settings', icon: Settings, label: t('nav_settings') },
+    { id: 'logout', icon: LogOut, label: t('nav_logout'), isLogout: true },
+  ];
+
+  // PCの場合はサイドバーを表示
+  if (isPc) {
+    return (
+      <div className="fixed inset-0 bg-slate-950 text-slate-100 flex overflow-hidden">
+        <aside className="w-64 bg-slate-900/50 border-r border-slate-800 flex flex-col p-6">
+          <div className="mb-10 px-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                <Zap size={18} className="text-white fill-current" />
+              </div>
+              <h1 className="text-2xl font-black italic tracking-tighter bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent uppercase">
+                FocusFlow
+              </h1>
+            </div>
+          </div>
+          <nav className="flex-1 space-y-2">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setCurrentPage(item.id)}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all ${
+                  (item.id === 'settings' ? ['settings', 'terms', 'privacy'].includes(currentPage) : currentPage === item.id)
+                    ? 'bg-indigo-600 text-white' 
+                    : 'text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                <item.icon size={20} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+          <button 
+            onClick={onLogout}
+            className="flex items-center gap-4 px-4 py-3 rounded-xl font-bold text-slate-500 hover:text-rose-400 transition-all mt-auto"
+          >
+            <LogOut size={20} />
+            <span>{t('nav_logout')}</span>
+          </button>
+        </aside>
+        <main className="flex-1 overflow-y-auto relative">{children}</main>
+      </div>
+    );
+  }
+
+  // スマホの場合はボトムナビを表示
   return (
     <div className="fixed inset-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
-      <main className="flex-1 p-5 max-w-md mx-auto w-full overflow-hidden relative">{children}</main>
-      <nav className="bg-slate-900/90 backdrop-blur-xl border-t border-slate-800 px-4 py-3 flex justify-between items-center">
-        <button 
-          onClick={() => setCurrentPage('timer')} 
-          className={`flex flex-col items-center gap-1 flex-1 ${currentPage === 'timer' ? 'text-indigo-400' : 'text-slate-600'}`}
-        >
-          <Timer size={22} />
-          <span className="text-[10px] font-bold">{t('nav_timer')}</span>
-        </button>
-        <button 
-          onClick={() => setCurrentPage('analysis')} 
-          className={`flex flex-col items-center gap-1 flex-1 ${currentPage === 'analysis' ? 'text-indigo-400' : 'text-slate-600'}`}
-        >
-          <LayoutDashboard size={22} />
-          <span className="text-[10px] font-bold">{t('nav_analysis')}</span>
-        </button>
-        <button 
-          onClick={() => setCurrentPage('history')} 
-          className={`flex flex-col items-center gap-1 flex-1 ${currentPage === 'history' ? 'text-indigo-400' : 'text-slate-600'}`}
-        >
-          <History size={22} />
-          <span className="text-[10px] font-bold">{t('nav_history')}</span>
-        </button>
-        <button 
-          onClick={() => setCurrentPage('settings')} 
-          className={`flex flex-col items-center gap-1 flex-1 ${['settings', 'terms', 'privacy', 'focus-test'].includes(currentPage) ? 'text-indigo-400' : 'text-slate-600'}`}
-        >
-          <Settings size={22} />
-          <span className="text-[10px] font-bold">{t('nav_settings')}</span>
-        </button>
-        <button 
-          onClick={onLogout} 
-          className="flex flex-col items-center gap-1 flex-1 text-slate-600 hover:text-rose-400"
-        >
-          <LogOut size={22} />
-          <span className="text-[10px] font-bold">{t('nav_logout')}</span>
-        </button>
+      <main className="flex-1 p-5 max-w-md mx-auto w-full overflow-y-auto relative pb-24">
+        {children}
+      </main>
+      
+      {/* フッターナビゲーション: 背景色のみを bg-slate-900 に変更、アイコン・文字色は元の slate-500 を維持 */}
+      <nav className="fixed bottom-0 left-0 right-0 w-full bg-slate-900 backdrop-blur-xl pb-6 pt-2 h-24 flex items-center z-50">
+        <div className="flex w-full items-center justify-around px-2">
+          {mobileNavItems.map((item) => {
+            const isActive = item.id === 'settings' 
+              ? ['settings', 'terms', 'privacy', 'pc-link'].includes(currentPage)
+              : currentPage === item.id;
+
+            return (
+              <button 
+                key={item.id}
+                onClick={() => item.isLogout ? onLogout() : setCurrentPage(item.id)} 
+                className="flex flex-col items-center justify-center gap-1 flex-1 transition-all active:scale-95"
+              >
+                <div className={`relative p-1 transition-colors duration-300 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                  <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                  {isActive && (
+                    <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full -z-10" />
+                  )}
+                </div>
+                <span className={`text-[10px] font-bold tracking-tight transition-colors duration-300 ${
+                  isActive ? 'text-indigo-400' : 'text-slate-500'
+                }`}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );
@@ -74,16 +133,16 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout }
 const SettingsPage = ({ onNavigate }) => {
   const { t } = useTranslation();
   return (
-    <div className="animate-in fade-in duration-500">
+    <div className="animate-in fade-in duration-500 p-6 max-w-md mx-auto lg:mx-0">
       <h2 className="text-xl font-black italic uppercase tracking-tighter mb-6 text-indigo-400">Settings</h2>
       <div className="space-y-3">
         <button
-          onClick={() => onNavigate('focus-test')}
-          className="w-full text-left p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-sm font-bold flex justify-between items-center group active:bg-indigo-500/20 transition-colors"
+          onClick={() => onNavigate('pc-link')}
+          className="w-full text-left p-4 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold flex justify-between items-center group active:bg-slate-800 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <Activity size={18} className="text-indigo-400" />
-            <span>Focus Detection Test (Beta)</span>
+            <Monitor size={18} className="text-indigo-400" />
+            <span>PC連携設定</span>
           </div>
           <ChevronRight size={18} className="text-slate-500 group-hover:text-indigo-400 transition-colors" />
         </button>
@@ -112,14 +171,22 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [history, setHistory] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPc, setIsPc] = useState(false);
   
-  // 保存された最新の集中データを保持する state を追加
   const [currentFocusData, setCurrentFocusData] = useState(null);
-  
-  // 履歴画面のリセット用
   const [historyKey, setHistoryKey] = useState(0);
 
   const audioRef = useRef(null);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      const width = window.innerWidth;
+      setIsPc(width >= 1024);
+    };
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
 
   const navigate = (page) => {
     setHistory(prev => [...prev, currentPage]);
@@ -128,7 +195,6 @@ export default function App() {
 
   const handlePageChange = (page) => {
     if (page === 'history' && currentPage === 'history') {
-      // 履歴画面で履歴ボタンが押されたらリマウントして一覧に戻す
       setHistoryKey(prev => prev + 1);
     }
     setCurrentPage(page);
@@ -144,7 +210,11 @@ export default function App() {
 
   const handleAuthSuccess = () => {
     setIsAuthenticated(true);
-    setCurrentPage('timer');
+    if (window.innerWidth >= 1024) {
+      setCurrentPage('pc-link');
+    } else {
+      setCurrentPage('timer');
+    }
   };
 
   const handleLogout = () => {
@@ -162,9 +232,6 @@ export default function App() {
     }
   };
 
-  /**
-   * 集中セッション保存処理
-   */
   const handleFocusComplete = async (result) => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -172,21 +239,13 @@ export default function App() {
     }
 
     setIsSaving(true);
-    
     try {
-      // APIから返ってくる保存済みレコードを取得
       const response = await createFocusRecord(result);
-      
-      // レスポンスに含まれる focus_record データを保持
-      // (Railsのコントローラーが { success: true, focus_record: ... } を返す想定)
       if (response && response.focus_record) {
         setCurrentFocusData(response.focus_record);
       } else {
-        // フォールバック: 送信したデータ自体をセット（IDがないため分析は走らないがスコアは出る）
         setCurrentFocusData(result);
       }
-
-      console.log("Focus record saved successfully.");
       setCurrentPage('analysis');
     } catch (error) {
       console.error("Failed to save focus record:", error);
@@ -196,7 +255,7 @@ export default function App() {
     }
   };
 
-  if (!isAuthenticated) {
+  const renderAuthPages = () => {
     switch (currentPage) {
       case 'landing': return <LandingPage onNavigate={navigate} />;
       case 'signup':  return <SignUpPage onNavigate={navigate} onAuthSuccess={handleAuthSuccess} />;
@@ -206,47 +265,65 @@ export default function App() {
       case 'privacy': return <PrivacyPage onNavigate={goBack} />;
       default:         return <LandingPage onNavigate={navigate} />;
     }
-  }
+  };
 
   return (
-    <AuthenticatedLayout currentPage={currentPage} setCurrentPage={handlePageChange} onLogout={handleLogout}>
-      {isSaving && <LoadingOverlay message="Analyzing Session..." />}
+    <div className="w-full min-h-screen bg-black text-white">
+      {!isAuthenticated ? (
+        renderAuthPages()
+      ) : (
+        <AuthenticatedLayout currentPage={currentPage} setCurrentPage={handlePageChange} onLogout={handleLogout} isPc={isPc}>
+          {isSaving && <LoadingOverlay message="Analyzing Session..." />}
 
-      <audio
-        ref={audioRef}
-        src="https://actions.google.com/sounds/v1/alarms/alarm_clock_ringing_proximity.ogg"
-        loop
-      />
+          <audio
+            ref={audioRef}
+            src="https://actions.google.com/sounds/v1/alarms/alarm_clock_ringing_proximity.ogg"
+            loop
+          />
 
-      {currentPage === 'timer' && (
-        <ConcentrationTimer
-          onComplete={handleFocusComplete}
-          onTimeUp={playAlarm}
-        />
+          <div className="h-full w-full relative">
+            {currentPage === 'timer' && (
+              isPc ? (
+                <FocusDetectionPage onNavigate={setCurrentPage} />
+              ) : (
+                <ConcentrationTimer
+                  onComplete={handleFocusComplete}
+                  onTimeUp={playAlarm}
+                />
+              )
+            )}
+
+            {currentPage === 'analysis' && (
+              <div className={isPc ? "p-10" : ""}>
+                <AnalysisPage 
+                  focusData={currentFocusData} 
+                  onBack={() => setCurrentPage('timer')}
+                />
+              </div>
+            )}
+            
+            {currentPage === 'history' && (
+              <div className={isPc ? "p-10" : ""}>
+                <HistoryPage key={historyKey} />
+              </div>
+            )}
+
+            {currentPage === 'settings' && <SettingsPage onNavigate={navigate} />}
+
+            {currentPage === 'pc-link' && (
+              <div className={isPc ? "" : "absolute inset-0 z-50 bg-slate-950"}>
+                <PcLinkPage onNavigate={goBack} />
+              </div>
+            )}
+
+            {(currentPage === 'terms' || currentPage === 'privacy') && (
+              <div className="absolute inset-0 z-50 bg-slate-950">
+                {currentPage === 'terms' ? <TermsPage onNavigate={goBack} /> : <PrivacyPage onNavigate={goBack} />}
+              </div>
+            )}
+          </div>
+        </AuthenticatedLayout>
       )}
-
-      {/* AnalysisPage に保存したデータを渡す */}
-      {currentPage === 'analysis' && (
-        <AnalysisPage 
-          focusData={currentFocusData} 
-          onBack={() => setCurrentPage('timer')}
-        />
-      )}
-      
-      {currentPage === 'history' && <HistoryPage key={historyKey} />}
-      {currentPage === 'settings' && <SettingsPage onNavigate={navigate} />}
-
-      {currentPage === 'focus-test' && (
-        <div className="absolute inset-0 z-50 bg-slate-950">
-          <FocusDetectionPage onNavigate={goBack} />
-        </div>
-      )}
-
-      {(currentPage === 'terms' || currentPage === 'privacy') && (
-        <div className="absolute inset-0 z-50 bg-slate-950">
-          {currentPage === 'terms' ? <TermsPage onNavigate={goBack} /> : <PrivacyPage onNavigate={goBack} />}
-        </div>
-      )}
-    </AuthenticatedLayout>
+    </div>
   );
 }
