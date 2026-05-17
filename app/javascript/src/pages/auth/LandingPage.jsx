@@ -11,14 +11,14 @@ const LandingPage = ({ onNavigate }) => {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center justify-between h-[100dvh] w-full text-center p-6 bg-slate-950 overflow-hidden py-8">
+    <div className="flex flex-col items-center justify-between fixed inset-0 w-full text-center p-6 bg-slate-950 overflow-hidden py-8 select-none touch-none">
       
       {/* ヘッダーセクション（上部に配置） */}
       <div className="w-full">
         <h1 className="text-5xl font-black tracking-tighter bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent mb-2 italic leading-tight">
           FocusFlow
         </h1>
-        {/* i18n.js 内の lp_hero_subtitle キーのみを参照するように修正 */}
+        {/* i18n.js 内の lp_hero_subtitle キーのみを参照する */}
         <p className="text-slate-400 text-xs sm:text-sm max-w-xs mx-auto leading-relaxed">
           <Trans i18nKey="lp_hero_subtitle" />
         </p>

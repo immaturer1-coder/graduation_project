@@ -45,7 +45,7 @@ const ResetPasswordPage = ({ onNavigate }) => {
   // 送信完了画面
   if (isSent) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-950 animate-in fade-in duration-500">
+      <div className="flex flex-col items-center justify-center fixed inset-0 p-6 bg-slate-950 select-none touch-none animate-in fade-in duration-500">
         <div className="w-full max-w-sm text-center">
           <div className="mb-8">
             <div className="inline-flex p-4 rounded-full bg-emerald-500/10 text-emerald-400 mb-4 border border-emerald-500/20">
@@ -69,7 +69,7 @@ const ResetPasswordPage = ({ onNavigate }) => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-950">
+    <div className="flex flex-col items-center justify-center fixed inset-0 p-6 bg-slate-950 select-none touch-none">
       <div className="w-full max-w-sm text-center">
         {/* ヘッダー部分 */}
         <div className="mb-8">

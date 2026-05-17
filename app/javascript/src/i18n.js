@@ -66,7 +66,7 @@ const resources = {
       "pc_link_step3_desc": "準備ができたらスマホを裏返します。PC画面が自動で切り替わります。",
       "pc_link_benefit": "PC作業中の集中を妨げないシームレスな体験",
       "pc_link_copy_url": "PC用URLをコピー",
-      "pc_link_footer_note": "※同一アカウントでログインする必要があります。\nブラウザの通知設定がONであることを確認してください。",
+      "pc_link_footer_note": "※同一アカウントでログインする必要があります。\nブラウザの通知設定がONであることを\n確認してください。",
       "pc_link_ready_sync": "同期の準備完了",
       "pc_link_waiting_link": "連携を待機中",
       "pc_link_pc_main_title": "PCとの連携設定",
@@ -78,6 +78,8 @@ const resources = {
       "pc_link_btn_allow": "通知を許可して待機する",
       "pc_link_ready_status": "連携準備が完了しました",
       "pc_link_waiting_flip": "スマホの裏返しを待機中...",
+      "pc_linked": "PC連携中 ",
+      "pc_unlinked": "PC未連携 ",
 
       // センサーエンジン (FocusDetectionEngine)
       "engine_capabilities": {
@@ -275,6 +277,8 @@ const resources = {
       "pc_link_btn_allow": "Allow Notifications & Wait",
       "pc_link_ready_status": "Integration Ready",
       "pc_link_waiting_flip": "Waiting for device flip...",
+      "pc_linked": "PC Linked ",
+      "pc_unlinked": "PC Unlinked ",
 
       // Sensor Engine (FocusDetectionEngine)
       "engine_capabilities": {

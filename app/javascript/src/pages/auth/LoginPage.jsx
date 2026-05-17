@@ -37,8 +37,6 @@ const LoginPage = ({ onNavigate, onAuthSuccess }) => {
       onAuthSuccess(data.data);
     } catch (err) {
       // 2. サーバーエラーのハンドリング
-      // サーバーから "Invalid email or password." 等が返ってきた場合、
-      // 共通の日本語メッセージに変換するか、i18nキーを使用します。
       if (err.message.includes('Invalid') || err.message.includes('password')) {
         setError(t('error_something_went_wrong')); // または専用の "ID/PWが違います" キーを作成
       } else {
@@ -50,7 +48,7 @@ const LoginPage = ({ onNavigate, onAuthSuccess }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-950">
+    <div className="flex flex-col items-center justify-center fixed inset-0 p-6 bg-slate-950 select-none touch-none">
       <div className="w-full max-w-sm">
         <button
           onClick={() => onNavigate('landing')}

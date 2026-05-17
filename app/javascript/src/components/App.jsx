@@ -89,12 +89,12 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
   // スマホの場合はボトムナビを表示
   return (
     <div className="fixed inset-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
-      <main className="flex-1 p-5 max-w-md mx-auto w-full overflow-y-auto relative pb-24">
+      <main className="flex-1 p-5 max-w-md mx-auto w-full overflow-y-auto relative pb-20">
         {children}
       </main>
       
-      {/* フッターナビゲーション: 背景色のみを bg-slate-900 に変更、アイコン・文字色は元の slate-500 を維持 */}
-      <nav className="fixed bottom-0 left-0 right-0 w-full bg-slate-900 backdrop-blur-xl pb-6 pt-2 h-24 flex items-center z-50">
+      {/* フッターナビゲーション */}
+      <nav className="fixed bottom-0 left-0 right-0 w-full bg-slate-900 backdrop-blur-xl py-2 h-16 flex items-center z-50">
         <div className="flex w-full items-center justify-around px-2">
           {mobileNavItems.map((item) => {
             const isActive = item.id === 'settings' 
