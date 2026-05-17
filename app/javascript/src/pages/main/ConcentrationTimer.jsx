@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Zap, 
@@ -6,7 +6,8 @@ import {
   ChevronLeft, 
   Loader2, 
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  Monitor
 } from 'lucide-react';
 
 // コンポーネント
@@ -27,6 +28,9 @@ const ConcentrationTimer = ({ onComplete }) => {
   
   // ロジックの集約
   const logic = useConcentrationLogic(onComplete);
+
+  // PCとの連携状態を管理するState
+  const [isPcLinked] = useState(true);
 
   // logicが取得できるまでのガード
   if (!logic) return null;
@@ -72,6 +76,35 @@ const ConcentrationTimer = ({ onComplete }) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center text-slate-100 p-6 bg-slate-950 overflow-hidden relative">
       
+      {/* 待機中（waiting含む）のタイマー関連フェーズすべてで最右上端に固定配置されるPC連携バッジ */}
+      {(phase === 'mode_select' || phase === 'timer_setup' || phase === 'waiting') && (
+        <div 
+          className="animate-in fade-in duration-300"
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 50
+          }}
+        >
+          {isPcLinked ? (
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-black tracking-wider shadow-lg backdrop-blur-md">
+              <span className="relative flex h-1.5 w-1.5 mr-0.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+              </span>
+              <Monitor size={11} className="shrink-0" />
+              <span>{t('pc_linked', 'PC連携中 ')}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-800 text-slate-500 text-[10px] font-bold tracking-wider shadow-lg backdrop-blur-md">
+              <Monitor size={11} className="shrink-0" />
+              <span>{t('pc_unlinked', 'PC未連携 ')}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* モード選択フェーズ */}
       {phase === 'mode_select' && (
         <div className="w-full max-w-xs space-y-4 animate-in fade-in zoom-in-95 duration-300">

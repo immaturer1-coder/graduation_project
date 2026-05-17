@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Smartphone, Bell, ShieldCheck, Zap, Monitor, Info, ExternalLink, ChevronRight } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import PrimaryButton from '../../components/ui/PrimaryButton';
+import Toast from '../../components/ui/Toast';
 import { useNotification } from '../../hooks/useNotification';
 
 /**
@@ -11,6 +12,7 @@ import { useNotification } from '../../hooks/useNotification';
 const PcLinkPage = () => {
   const { t } = useTranslation();
   const [isMobile, setIsMobile] = useState(false);
+  const [toast, setToast] = useState(null);
   
   const { permission, requestPermission, sendNotification } = useNotification();
   const isPermissionGranted = permission === 'granted';
@@ -23,6 +25,12 @@ const PcLinkPage = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (isPermissionGranted) {
+      showToast(t('pc_link_ready_sync'), 'success');
+    }
+  }, [isPermissionGranted, t]);
+
   const handleRequestPermission = async () => {
     const result = await requestPermission();
     if (result === 'granted') {
@@ -31,14 +39,21 @@ const PcLinkPage = () => {
         body: t('pc_link_step_flip_desc'),
         tag: 'welcome-sync'
       });
+      showToast(t('pc_link_ready_sync'), 'success');
+    } else if (result === 'denied') {
+      showToast('Notification is blocked. Please allow it in browser settings.', 'error');
     }
+  };
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type });
   };
 
   // コピー処理
   const handleCopyUrl = () => {
     const pcUrl = "https://focusflow-73hm.onrender.com/";
     navigator.clipboard.writeText(pcUrl).then(() => {
-      // 必要に応じてトースト通知などを出す
+      showToast('URLをコピーしました！', 'success');
     }).catch(err => {
       // フォールバック用の従来手法
       const textArea = document.createElement("textarea");
@@ -47,12 +62,21 @@ const PcLinkPage = () => {
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
+      showToast('URLをコピーしました！', 'success');
     });
   };
 
   if (isMobile) {
     return (
       <div className="flex flex-col items-center min-h-screen px-6 bg-slate-950 text-slate-100 select-none overflow-y-auto pb-10 font-sans">
+        {/* 通常のトースト表示（コピー通知以外） */}
+        {toast && toast.message !== 'URLをコピーしました！' && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
         <div className="w-full max-w-md py-10 space-y-8">
           
           {/* ヘッダー */}
@@ -119,7 +143,28 @@ const PcLinkPage = () => {
           </div>
 
           {/* URLコピーセクション */}
-          <div className="pt-2">
+          <div className="pt-2 space-y-3">
+            {/* コピー通知のスマホ専用インライン表示（ボタンの真上に出現させて視認性を100%確保） */}
+            {toast && toast.message === 'URLをコピーしました！' && (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex items-center justify-between gap-3 px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)] backdrop-blur-md">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[11px] font-black tracking-wider">{toast.message}</span>
+                  </div>
+                  <button 
+                    onClick={() => setToast(null)} 
+                    className="text-[10px] text-emerald-400/60 hover:text-emerald-400 font-bold uppercase tracking-wider"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
             <button 
               onClick={handleCopyUrl}
               className="w-full p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-between active:bg-indigo-500/20 transition-colors"
@@ -144,7 +189,14 @@ const PcLinkPage = () => {
   }
 
   return (
-    <div className="flex flex-col items-center min-h-screen px-6 bg-slate-950 text-slate-100 select-none font-sans">
+    <div className="flex flex-col items-center min-h-screen px-6 bg-slate-950 text-slate-100 select-none font-sans relative">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="w-full max-w-md flex-grow flex flex-col justify-center py-12 space-y-8 text-center">
         
         <div>
@@ -165,7 +217,7 @@ const PcLinkPage = () => {
               <div className={`w-10 h-[2px] rounded-full transition-all duration-1000 ${isPermissionGranted ? 'bg-indigo-500 opacity-100' : 'bg-slate-800 opacity-30'}`} />
               <div className={`w-6 h-[2px] rounded-full transition-all duration-1000 delay-150 ${isPermissionGranted ? 'bg-indigo-500 opacity-100' : 'bg-slate-800 opacity-30'}`} />
             </div>
-            <div className={`p-5 bg-slate-900 border transition-all duration-700 rounded-3xl shadow-2xl ${isPermissionGranted ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]' : 'border-slate-800 shadow-none'}`}>
+            <div className={`p-5 bg-slate-900 border transition-all duration-700 rounded-3xl shadow-2xl ${isPermissionGranted ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.35)]' : 'border-slate-800 shadow-none'}`}>
               <Smartphone size={48} className={`transition-colors duration-700 ${isPermissionGranted ? 'text-indigo-400' : 'text-slate-600'}`} />
             </div>
           </div>
@@ -213,7 +265,6 @@ const PcLinkPage = () => {
               </PrimaryButton>
               {permission === 'denied' && (
                 <p className="text-[10px] text-red-400 font-bold">
-                  {/* ブラウザ設定で通知がブロックされています。解除してください。 */}
                   Notification is blocked. Please allow it in browser settings.
                 </p>
               )}

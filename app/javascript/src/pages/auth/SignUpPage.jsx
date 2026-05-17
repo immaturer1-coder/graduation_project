@@ -7,7 +7,6 @@ import { signUp } from '../../api/auth';
 
 /**
  * Sign Up Page
- * 規約同意部分の語順を言語設定に合わせて調整しました。
  */
 const SignUpPage = ({ onNavigate, onAuthSuccess }) => {
   const { t, i18n } = useTranslation();
@@ -72,7 +71,7 @@ const SignUpPage = ({ onNavigate, onAuthSuccess }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-950">
+    <div className="flex flex-col items-center justify-center fixed inset-0 p-6 bg-slate-950 select-none touch-none">
       <div className="w-full max-w-sm">
         <button
           onClick={() => onNavigate('landing')}
