@@ -81,6 +81,10 @@ const resources = {
       "pc_linked": "PC連携中 ",
       "pc_unlinked": "PC未連携 ",
 
+      // トースト通知
+      "recommend_break_long": "お疲れ様でした。長時間集中しましたね、少し目を休めませんか？ ☕",
+      "pc_sync_started": "集中ルーティンが開始されました。作業に没頭しましょう！",
+
       // センサーエンジン (FocusDetectionEngine)
       "engine_capabilities": {
         "hero_title_part1": "集中",
@@ -279,6 +283,10 @@ const resources = {
       "pc_link_waiting_flip": "Waiting for device flip...",
       "pc_linked": "PC Linked ",
       "pc_unlinked": "PC Unlinked ",
+
+      // 拡張通知
+      "recommend_break_long": "Well done! You have focused for a long time. Why not take a break? ☕",
+      "pc_sync_started": "Focus routine started. Let's immerse in your work!",
 
       // Sensor Engine (FocusDetectionEngine)
       "engine_capabilities": {

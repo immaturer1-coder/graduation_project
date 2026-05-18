@@ -1,19 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Smartphone, Bell, ShieldCheck, Zap, Monitor, Info, ExternalLink, ChevronRight } from 'lucide-react';
+import { 
+  Smartphone, 
+  Bell, 
+  ShieldCheck, 
+  Zap, 
+  Monitor, 
+  Info, 
+  ExternalLink, 
+  ChevronRight 
+} from 'lucide-react';
 import Card from '../../components/ui/Card';
 import PrimaryButton from '../../components/ui/PrimaryButton';
 import Toast from '../../components/ui/Toast';
 import { useNotification } from '../../hooks/useNotification';
 
+// ActionCable接続ヘルパーのインポート
+import { getConsumer } from '../../utils/cable';
+
 /**
- * PcLinkPage: PC&スマホ連携待機画面＆通知機能バージョン
+ * PcLinkPage: PC&スマホ連携待機画面＆通知機能バージョン（ActionCable同期およびOS通知強制連動版）
  */
 const PcLinkPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isMobile, setIsMobile] = useState(false);
   const [toast, setToast] = useState(null);
   
+  // スマホ連動のリアルタイム通信ステータス
+  const [isSyncFocusing, setIsSyncFocusing] = useState(false); // スマホが現在裏返し集中中か
+  const [syncSessionData, setSyncSessionData] = useState(null); // 同期された時間等の設定情報
+  
+  const channelRef = useRef(null);
   const { permission, requestPermission, sendNotification } = useNotification();
   const isPermissionGranted = permission === 'granted';
 
@@ -25,11 +42,112 @@ const PcLinkPage = () => {
     }
   }, []);
 
+  // --- ActionCableによるリアルタイム双方向連携の購読・受信処理 (PC側のみ稼働) ---
   useEffect(() => {
-    if (isPermissionGranted) {
+    // 送信元となるスマホ側（isMobile）では購読を行わず、表示受信側となるPCブラウザでのみ接続します
+    if (isMobile) return;
+
+    const consumer = getConsumer();
+    if (consumer) {
+      channelRef.current = consumer.subscriptions.create(
+        { channel: 'FocusSessionChannel' },
+        {
+          connected() {
+            console.log('[WebSocket] PC connected to FocusSessionChannel');
+          },
+          disconnected() {
+            console.log('[WebSocket] PC disconnected from FocusSessionChannel');
+            setIsSyncFocusing(false);
+          },
+          received(data) {
+            console.log('[WebSocket] PC received broadcast message:', data);
+            
+            if (data.event === 'start_focus') {
+              // スマホが裏返されて集中がスタートした瞬間
+              setIsSyncFocusing(true);
+              setSyncSessionData(data.payload);
+
+              // 🌟【極上UXガード】セッション途中の「再開」時は通知をスキップし、初回の計測開始時のみバナーとトーストを起動する
+              if (!data.payload?.is_resume) {
+                const titleText = t('pc_sync_started', '集中ルーティンが開始されました。作業に没頭しましょう！');
+
+                // OSデスクトップ通知の強制発火
+                sendNotification(titleText, {
+                  body: data.payload?.mode === 'timer' ? '目標タイマー作動中' : '無制限集中モード計測中',
+                  tag: 'focus-sync-start'
+                });
+
+                // インアプリトーストも同時に発光表示
+                showToast(titleText, 'success');
+              } else {
+                console.log('[WebSocket] Resume detected. Skipping start notifications.');
+              }
+
+            } else if (data.event === 'end_focus') {
+              // スマホが表に戻された、またはセッションを完了した瞬間
+              setIsSyncFocusing(false);
+              setSyncSessionData(null);
+              
+              // 🌟【極上UXガード】3秒ルール（一時的な警告）の時は通知をスキップし、
+              // 内省画面への移行など「真のセッション終了 (completed)」の時だけ終了バナーとトーストを起動する
+              if (data.payload?.stop_reason === 'completed') {
+                sendNotification('集中ルーティンが終了しました', {
+                  body: 'スマートフォンが元に戻されました。内省を入力してください。',
+                  tag: 'focus-sync-end'
+                });
+
+                showToast('集中ルーティンが終了しました。お疲れ様でした！', 'info');
+              } else {
+                console.log('[WebSocket] Interrupted (3-second warning). Skipping end notifications.');
+              }
+
+            } else if (data.event === 'recommend_milestone') {
+              // ①【マイルストーン通知】スマホ側で30秒（本番45分）経過した瞬間
+              console.log('[WebSocket] Received recommend_milestone');
+
+              // OS通知ポップアップ（画面の裏側でも絶対に見逃さない）
+              sendNotification('45分経過しました。素晴らしい集中です！ 🎉', {
+                body: '適宜ストレッチをして姿勢をリフレッシュしましょう。',
+                tag: 'focus-milestone',
+                requireInteraction: true // ユーザーが閉じるまでバナーを維持
+              });
+
+              // 画面上にもトーストを表示
+              showToast('45分経過しました。素晴らしい集中です！ 🎉', 'success');
+
+            } else if (data.event === 'recommend_break') {
+              // ②【休憩レコメンド通知】スマホ側で60秒（本番90分）経過した瞬間
+              console.log('[WebSocket] Received recommend_break');
+
+              // OS通知ポップアップ
+              sendNotification('お疲れ様でした。長時間集中しましたね、少し休憩しませんか？ ☕', {
+                body: '水分を摂り、一度深く呼吸をしてみましょう。',
+                tag: 'focus-break-recommend',
+                requireInteraction: true // ユーザーが閉じるまでバナーを維持
+              });
+
+              // 画面上にも表示して休憩を促す（warningタイプでエキサイティングに発光）
+              showToast('お疲れ様でした。長時間集中しましたね、少し休憩しませんか？ ☕', 'warning');
+            }
+          }
+        }
+      );
+    }
+
+    // アンマウント時に購読解除
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        console.log('[WebSocket] PC unsubscribed from FocusSessionChannel');
+      }
+    };
+  }, [isMobile, sendNotification, t]);
+
+  useEffect(() => {
+    if (isPermissionGranted && !isSyncFocusing) {
       showToast(t('pc_link_ready_sync'), 'success');
     }
-  }, [isPermissionGranted, t]);
+  }, [isPermissionGranted, isSyncFocusing, t]);
 
   const handleRequestPermission = async () => {
     const result = await requestPermission();
@@ -49,23 +167,32 @@ const PcLinkPage = () => {
     setToast({ message, type });
   };
 
-  // コピー処理
+  // コピー処理 (バグの原因となっていた `navigator.clipboard.then` 記述エラーを完全に修正)
   const handleCopyUrl = () => {
     const pcUrl = "https://focusflow-73hm.onrender.com/";
-    navigator.clipboard.writeText(pcUrl).then(() => {
-      showToast('URLをコピーしました！', 'success');
-    }).catch(err => {
-      // フォールバック用の従来手法
-      const textArea = document.createElement("textarea");
-      textArea.value = pcUrl;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      showToast('URLをコピーしました！', 'success');
-    });
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      navigator.clipboard.writeText(pcUrl).then(() => {
+        showToast('URLをコピーしました！', 'success');
+      }).catch(err => {
+        fallbackCopy(pcUrl);
+      });
+    } else {
+      fallbackCopy(pcUrl);
+    }
   };
 
+  // コピー処理フォールバック用従来手法
+  const fallbackCopy = (text) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    showToast('URLをコピーしました！', 'success');
+  };
+
+  // 📱スマホで見たときのUI
   if (isMobile) {
     return (
       <div className="flex flex-col items-center min-h-screen px-6 bg-slate-950 text-slate-100 select-none overflow-y-auto pb-10 font-sans">
@@ -188,6 +315,59 @@ const PcLinkPage = () => {
     );
   }
 
+  // 🖥️ PC環境での同期中（スマホ裏返し状態）の「トースト通知UI」
+  if (isSyncFocusing) {
+    return (
+      <div className="fixed inset-0 bg-black/98 text-slate-100 flex flex-col items-center justify-center p-8 select-none z-[999] animate-in fade-in duration-700">
+        <div className="absolute inset-0 bg-indigo-950/20 blur-[120px] rounded-full" />
+        
+        <div className="w-full max-w-md text-center space-y-10 relative">
+          
+          {/* 同期中インアプリトースト通知 */}
+          {toast && (
+            <Toast
+              message={toast.message}
+              type={toast.type}
+              onClose={() => setToast(null)}
+            />
+          )}
+
+          {/* 没頭を象徴する物理スマホデバイス性能反転アニメーション */}
+          <div className="flex justify-center">
+            <div className="p-8 bg-slate-900/60 border border-indigo-500/30 rounded-full shadow-[0_0_50px_rgba(99,102,241,0.2)] animate-pulse">
+              <Smartphone size={64} className="text-indigo-400 rotate-180 transition-transform duration-700" />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-4xl font-black tracking-tighter text-white uppercase italic">
+              Focus Active
+            </h2>
+            <p className="text-slate-400 text-sm leading-relaxed font-bold tracking-[0.2em] uppercase">
+              {syncSessionData?.mode === 'timer' ? 'Timer Mode Synchronized' : 'Unlimited Focus Synchronized'}
+            </p>
+          </div>
+
+          <Card className="bg-slate-900/40 border-slate-800/40 p-6 flex flex-col items-center justify-center gap-1">
+            <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Target Focus State</span>
+            <div className="text-lg font-black text-emerald-400 flex items-center gap-2 mt-1">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>IN FLOW STATE</span>
+            </div>
+          </Card>
+          
+          <p className="text-xs text-slate-600 font-bold tracking-widest uppercase animate-pulse">
+            Keep your phone face down on your desk.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🖥️ PC側の初期待機状態のUI (非同期中)
   return (
     <div className="flex flex-col items-center min-h-screen px-6 bg-slate-950 text-slate-100 select-none font-sans relative">
       {toast && (
@@ -232,7 +412,7 @@ const PcLinkPage = () => {
           </p>
         </div>
 
-        {/* ステップ表示 */}
+        {/* タイムライン表示 */}
         <Card className="bg-slate-900/50 border-slate-800/50 text-left p-6 space-y-4">
           <div className="flex items-start gap-4">
             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 ${isPermissionGranted ? 'bg-emerald-500' : 'bg-indigo-600'}`}>
