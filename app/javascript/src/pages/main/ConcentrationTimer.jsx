@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Zap, 
@@ -16,12 +16,15 @@ import DrumRoll from '../../components/ui/DrumRoll';
 import ReflectionForm from '../../components/ui/ReflectionForm';
 import FocusDetectionEngine from '../../components/ui/FocusDetectionEngine';
 
+// ActionCable接続ヘルパー
+import { getConsumer } from '../../utils/cable';
+
 // フック・ロジック
 import { useConcentrationLogic } from '../../hooks/useConcentrationLogic';
 import { useSensorLogger } from '../../hooks/useSensorLogger';
 
 /**
- * 集中タイマーの表示レイヤー
+ * 集中タイマーの表示レイヤー（リアルタイムPC同期送信 ＆ 表示時間完全同期対応）
  */
 const ConcentrationTimer = ({ onComplete }) => {
   const { t } = useTranslation();
@@ -31,6 +34,22 @@ const ConcentrationTimer = ({ onComplete }) => {
 
   // PCとの連携状態を管理するState
   const [isPcLinked] = useState(true);
+
+  // WebSocket of チャネル購読インスタンスを管理するRef
+  const channelRef = useRef(null);
+
+  // 繰り返し通知を行うため、最後に通知を発火したインターバル回数を追跡するRef
+  const lastTriggeredMilestoneIntervalRef = useRef(0); // 30分（1800秒）の何回目の倍数か
+  const lastTriggeredBreakIntervalRef = useRef(0);     // 45分（2700秒）の何回目の倍数か
+
+  // --- PC同期の送信状態を正しく追跡・ロックするためのエッジトリガー用Ref ---
+  const lastBroadcastedActiveRef = useRef(false);
+  
+  // セッション内で「すでに開始通知を行ったか（再開かどうか）」を管理するRef（バグ防止）
+  const isResumeRef = useRef(false);
+
+  // 同一セッション内で「セッション完了通知(completed)」の多重送信を防ぐロックRef
+  const hasSentCompletedRef = useRef(false);
 
   // logicが取得できるまでのガード
   if (!logic) return null;
@@ -47,8 +66,129 @@ const ConcentrationTimer = ({ onComplete }) => {
     pendingResult
   } = logic;
 
-  // 1. センサーログの取得（focusingフェーズの間のみアクティブ）
+  // 1. センサーログ of focus (focusingフェーズの間のみアクティブ)
   const { getLatestLogs } = useSensorLogger(phase === 'focusing'); 
+
+  // --- PC同期のステートマシン同期ロジック ---
+  // 現在PC側を「Focus Active（暗転）」にすべき状態かを厳密に判定
+  const isFocusActive = phase === 'focusing' && !isWarning && !showReflection;
+
+  // --- ActionCable通信の購読ライフサイクル管理 ---
+  useEffect(() => {
+    const consumer = getConsumer();
+    if (consumer) {
+      // Railsの FocusSessionChannel を安全に購読
+      channelRef.current = consumer.subscriptions.create(
+        { channel: 'FocusSessionChannel' },
+        {
+          connected() {
+            console.log('[WebSocket] Connected to FocusSessionChannel');
+          },
+          disconnected() {
+            console.log('[WebSocket] Disconnected from FocusSessionChannel');
+          }
+        }
+      );
+    }
+
+    // クリーンアップ時（アンマウント）に安全に接続を解除
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        console.log('[WebSocket] Unsubscribed from FocusSessionChannel');
+      }
+    };
+  }, []);
+
+  // 経過時間の閾値を監視してPCへ30分毎・45分毎にシグナルを送信する
+  useEffect(() => {
+    // 連携チャネルがない、または無制限集中モード(focus)ではない、または画面が一時停止(警告中など)の場合は何もしない
+    if (!channelRef.current || selectedMode !== 'focus' || !isFocusActive) return;
+
+    const seconds = time?.s || 0;
+    const minutes = time?.m || 0;
+    const hours = time?.h || 0;
+
+    // 分・秒を秒数に換算（表示上の経過秒数）
+    const elapsedSeconds = hours * 3600 + minutes * 60 + seconds;
+
+    // ①【時間経過通知】30分 (1800秒) 毎に表示
+    const milestoneInterval = 1800; // 30分 = 1800秒
+    const currentMilestoneInterval = Math.floor(elapsedSeconds / milestoneInterval);
+    
+    if (currentMilestoneInterval > 0 && currentMilestoneInterval > lastTriggeredMilestoneIntervalRef.current) {
+      lastTriggeredMilestoneIntervalRef.current = currentMilestoneInterval;
+      console.log(`[WebSocket] Sending milestone trigger (Interval: ${currentMilestoneInterval}, Elapsed: ${elapsedSeconds}s)`);
+      channelRef.current.perform('trigger_milestone', {
+        elapsed_seconds: elapsedSeconds
+      });
+    }
+
+    // ②【休憩レコメンド通知】45分 (2700秒) 毎に表示
+    const breakInterval = 2700; // 45分 = 2700秒
+    const currentBreakInterval = Math.floor(elapsedSeconds / breakInterval);
+    
+    if (currentBreakInterval > 0 && currentBreakInterval > lastTriggeredBreakIntervalRef.current) {
+      lastTriggeredBreakIntervalRef.current = currentBreakInterval;
+      console.log(`[WebSocket] Sending break recommend trigger (Interval: ${currentBreakInterval}, Elapsed: ${elapsedSeconds}s)`);
+      channelRef.current.perform('trigger_break_recommend', {
+        elapsed_seconds: elapsedSeconds
+      });
+    }
+  }, [time, selectedMode, isFocusActive]); // 画面の time が進むたびに正確に呼び出されます
+
+  // --- セッション全体のリセット制御 ---
+  useEffect(() => {
+    // モード選択画面に戻った時、または新しくセッションを開始する待機状態になった時
+    if (phase === 'mode_select' || phase === 'waiting' || showReflection) {
+      console.log('[WebSocket] Resetting session states. isResumeRef -> false, trigger interval counters -> 0');
+      isResumeRef.current = false;
+      lastTriggeredMilestoneIntervalRef.current = 0;
+      lastTriggeredBreakIntervalRef.current = 0;
+    }
+  }, [phase, showReflection]);
+
+  // ① 集中状態の物理反転・一時中断を監視してPC画面 of status を切り替える副作用
+  useEffect(() => {
+    if (!channelRef.current) return;
+
+    if (isFocusActive && !lastBroadcastedActiveRef.current) {
+      // 【スマホを伏せた瞬間】: 集中モード開始（または一時停止からの再開）
+      console.log(`[WebSocket] Transition Inactive -> Active. is_resume: ${isResumeRef.current}`);
+      channelRef.current.perform('start_focus', {
+        mode: selectedMode,
+        time_setting: time,
+        is_resume: isResumeRef.current
+      });
+      lastBroadcastedActiveRef.current = true;
+      isResumeRef.current = true; // 初回送信以降は再開状態とみなします
+      hasSentCompletedRef.current = false; // 新たに集中が始まったら、完了通知ロックを解除します
+
+    } else if (!isFocusActive && lastBroadcastedActiveRef.current) {
+      // 【スマホを表に向けた瞬間】: 3秒ルールのカウントダウン警告が開始された状態
+      console.log('[WebSocket] Transition Active -> Inactive (Suspended/3-Second Warning started)');
+      channelRef.current.perform('end_focus', {
+        stop_reason: 'interrupted'
+      });
+      lastBroadcastedActiveRef.current = false;
+    }
+  }, [isFocusActive, selectedMode, time]);
+
+  // ② 【真の計測終了】3秒の警告時間が経過し、真に内省ページ（showReflection）が起動した瞬間を捉える副作用
+  useEffect(() => {
+    if (!channelRef.current) return;
+
+    // showReflectionが真（＝3秒警告がタイムアップ、またはタイマー完了して内省が起動した）になった瞬間
+    if (showReflection && !hasSentCompletedRef.current) {
+      console.log('[WebSocket] Reflection Form Activated! Broadcasting "end_focus" with completed status.');
+      // 猶予時間の経過によって「セッションが正式に完了した（completed）」ことをPCにダイレクト送信します！
+      channelRef.current.perform('end_focus', {
+        stop_reason: 'completed'
+      });
+      hasSentCompletedRef.current = true; // 多重送信を防ぐためにロックを掛けます
+      lastBroadcastedActiveRef.current = false; // 同期状態を完全にリセット
+    }
+  }, [showReflection]);
 
   // クイック選択
   const quickOptions = [
@@ -62,12 +202,16 @@ const ConcentrationTimer = ({ onComplete }) => {
   };
 
   const startFocusMode = () => {
+    console.log('[WebSocket] Start Focus Mode. Hard resetting isResumeRef -> false');
+    isResumeRef.current = false; // 同期的に確実に開始通知用リセット
     setSelectedMode('focus');
     setTime({ h: 0, m: 0, s: 0 });
     setPhase('waiting');
   };
 
   const startTimerSetup = () => {
+    console.log('[WebSocket] Start Timer Setup. Hard resetting isResumeRef -> false');
+    isResumeRef.current = false; // 同期的に確実に開始通知用リセット
     setSelectedMode('timer');
     setTime({ h: 0, m: 0, s: 0 });
     setPhase('timer_setup');
@@ -158,6 +302,7 @@ const ConcentrationTimer = ({ onComplete }) => {
             {quickOptions.map((opt) => (
               <button
                 key={opt.value}
+                type="button"
                 onClick={() => handleQuickSelect(opt.value)}
                 className={`flex-1 py-3 px-2 rounded-2xl bg-slate-900 border transition-all ${
                   time?.m === opt.value && time?.h === 0 
@@ -174,6 +319,8 @@ const ConcentrationTimer = ({ onComplete }) => {
           <PrimaryButton 
             onClick={() => {
               if (time?.h === 0 && time?.m === 0) return;
+              console.log('[WebSocket] Setting Phase Waiting. Hard resetting isResumeRef -> false');
+              isResumeRef.current = false; // タイマー側セッション開始時にも確実に同期リセット
               setPhase('waiting');
             }} 
             icon={ArrowRight}
