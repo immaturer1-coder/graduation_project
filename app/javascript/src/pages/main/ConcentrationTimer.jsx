@@ -24,7 +24,7 @@ import { useConcentrationLogic } from '../../hooks/useConcentrationLogic';
 import { useSensorLogger } from '../../hooks/useSensorLogger';
 
 /**
- * 集中タイマーの表示レイヤー（リアルタイムPC同期送信 ＆ 集中中経過時間監視対応）
+ * 集中タイマーの表示レイヤー（リアルタイムPC同期送信 ＆ 表示時間完全同期対応）
  */
 const ConcentrationTimer = ({ onComplete }) => {
   const { t } = useTranslation();
@@ -35,16 +35,12 @@ const ConcentrationTimer = ({ onComplete }) => {
   // PCとの連携状態を管理するState
   const [isPcLinked] = useState(true);
 
-  // WebSocketのチャネル購読インスタンスを管理するRef
+  // WebSocket of チャネル購読インスタンスを管理するRef
   const channelRef = useRef(null);
 
-  // --- 集中中の経過時間をバックグラウンドで厳密に監視・計測するためのState・Ref ---
-  const [activeFocusSeconds, setActiveFocusSeconds] = useState(0);
-  const timerIntervalRef = useRef(null);
-
-  // 重複送信を防ぐためのロック用Ref（hasTriggeredMilestone, hasTriggeredBreak）
-  const hasTriggeredMilestoneRef = useRef(false);
-  const hasTriggeredBreakRef = useRef(false);
+  // 繰り返し通知を行うため、最後に通知を発火したインターバル回数を追跡するRef
+  const lastTriggeredMilestoneIntervalRef = useRef(0); // 30分（1800秒）の何回目の倍数か
+  const lastTriggeredBreakIntervalRef = useRef(0);     // 45分（2700秒）の何回目の倍数か
 
   // --- PC同期の送信状態を正しく追跡・ロックするためのエッジトリガー用Ref ---
   const lastBroadcastedActiveRef = useRef(false);
@@ -101,66 +97,54 @@ const ConcentrationTimer = ({ onComplete }) => {
         channelRef.current.unsubscribe();
         console.log('[WebSocket] Unsubscribed from FocusSessionChannel');
       }
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
     };
   }, []);
 
-  // --- 集中中（focusing）の経過時間（秒）をカウントアップするタイマー監視ロジック ---
+  // 経過時間の閾値を監視してPCへ30分毎・45分毎にシグナルを送信する
   useEffect(() => {
-    // 🌟 完璧だった元の時間追従モデルに完全に復旧（シンプルに phase 状態のみに同期）
-    if (phase === 'focusing' && selectedMode === 'focus' && !showReflection) {
-      setActiveFocusSeconds(0);
-      hasTriggeredMilestoneRef.current = false;
-      hasTriggeredBreakRef.current = false;
+    // 連携チャネルがない、または無制限集中モード(focus)ではない、または画面が一時停止(警告中など)の場合は何もしない
+    if (!channelRef.current || selectedMode !== 'focus' || !isFocusActive) return;
 
-      timerIntervalRef.current = setInterval(() => {
-        setActiveFocusSeconds((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
-    }
+    const seconds = time?.s || 0;
+    const minutes = time?.m || 0;
+    const hours = time?.h || 0;
 
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-    };
-  }, [phase, selectedMode, showReflection]);
+    // 分・秒を秒数に換算（表示上の経過秒数）
+    const elapsedSeconds = hours * 3600 + minutes * 60 + seconds;
 
-  // --- 経過時間の閾値を監視してPCへ一度だけシグナルを送信する副作用 ---
-  useEffect(() => {
-    if (!channelRef.current || selectedMode !== 'focus' || phase !== 'focusing' || showReflection) return;
-
-    // ①【マイルストーン通知】テスト用：30秒経過した瞬間（本番：45分経過時）
-    if (activeFocusSeconds >= 30 && !hasTriggeredMilestoneRef.current) {
-      hasTriggeredMilestoneRef.current = true;
-      console.log('[WebSocket] Sending milestone trigger (30s elapsed)');
+    // ①【時間経過通知】30分 (1800秒) 毎に表示
+    const milestoneInterval = 1800; // 30分 = 1800秒
+    const currentMilestoneInterval = Math.floor(elapsedSeconds / milestoneInterval);
+    
+    if (currentMilestoneInterval > 0 && currentMilestoneInterval > lastTriggeredMilestoneIntervalRef.current) {
+      lastTriggeredMilestoneIntervalRef.current = currentMilestoneInterval;
+      console.log(`[WebSocket] Sending milestone trigger (Interval: ${currentMilestoneInterval}, Elapsed: ${elapsedSeconds}s)`);
       channelRef.current.perform('trigger_milestone', {
-        elapsed_seconds: activeFocusSeconds
+        elapsed_seconds: elapsedSeconds
       });
     }
 
-    // ②【休憩レコメンド通知】テスト用：60秒（1分）経過した瞬間（本番：90分経過時）
-    if (activeFocusSeconds >= 60 && !hasTriggeredBreakRef.current) {
-      hasTriggeredBreakRef.current = true;
-      console.log('[WebSocket] Sending break recommend trigger (60s elapsed)');
+    // ②【休憩レコメンド通知】45分 (2700秒) 毎に表示
+    const breakInterval = 2700; // 45分 = 2700秒
+    const currentBreakInterval = Math.floor(elapsedSeconds / breakInterval);
+    
+    if (currentBreakInterval > 0 && currentBreakInterval > lastTriggeredBreakIntervalRef.current) {
+      lastTriggeredBreakIntervalRef.current = currentBreakInterval;
+      console.log(`[WebSocket] Sending break recommend trigger (Interval: ${currentBreakInterval}, Elapsed: ${elapsedSeconds}s)`);
       channelRef.current.perform('trigger_break_recommend', {
-        elapsed_seconds: activeFocusSeconds
+        elapsed_seconds: elapsedSeconds
       });
     }
-  }, [activeFocusSeconds, selectedMode, phase, showReflection]);
+  }, [time, selectedMode, isFocusActive]); // 画面の time が進むたびに正確に呼び出されます
 
   // --- セッション全体のリセット制御 ---
   useEffect(() => {
+    // モード選択画面に戻った時、または新しくセッションを開始する待機状態になった時
     if (phase === 'mode_select' || phase === 'waiting' || showReflection) {
-      console.log('[WebSocket] Resetting session states. isResumeRef -> false');
+      console.log('[WebSocket] Resetting session states. isResumeRef -> false, trigger interval counters -> 0');
       isResumeRef.current = false;
-      setActiveFocusSeconds(0);
+      lastTriggeredMilestoneIntervalRef.current = 0;
+      lastTriggeredBreakIntervalRef.current = 0;
     }
   }, [phase, showReflection]);
 
@@ -359,11 +343,6 @@ const ConcentrationTimer = ({ onComplete }) => {
             <div className="text-center space-y-3">
               <StatusBadge isTimeUp={isTimeUp} t={t} />
               <TimeDisplay time={time} />
-              
-              {/* テスト検証用：裏で進む経過秒数を画面上でデバッグ表示 */}
-              <div className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-1">
-                Elapsed: {activeFocusSeconds}s
-              </div>
             </div>
           )}
         </div>

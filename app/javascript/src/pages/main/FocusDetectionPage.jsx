@@ -93,7 +93,7 @@ const App = ({ onNavigate = (path) => console.log('Navigate to:', path) }) => {
   // PC用レイアウト
   if (isDesktop) {
     return (
-      <div className="h-screen w-full bg-[#05070a] text-slate-200 flex flex-col items-center justify-center overflow-hidden p-8 font-sans select-none relative">
+      <div className="h-screen w-full bg-slate-950 text-slate-200 flex flex-col items-center justify-center overflow-hidden p-8 pt-20 lg:pt-24 font-sans select-none relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-40 pointer-events-none" />
         
         <div className="w-full max-w-6xl relative z-10">

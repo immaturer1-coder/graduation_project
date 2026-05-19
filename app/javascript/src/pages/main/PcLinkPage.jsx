@@ -67,7 +67,7 @@ const PcLinkPage = () => {
               setIsSyncFocusing(true);
               setSyncSessionData(data.payload);
 
-              // 🌟【極上UXガード】セッション途中の「再開」時は通知をスキップし、初回の計測開始時のみバナーとトーストを起動する
+              // セッション途中の「再開」時は通知をスキップし、初回の計測開始時のみバナーとトーストを起動する
               if (!data.payload?.is_resume) {
                 const titleText = t('pc_sync_started', '集中ルーティンが開始されました。作業に没頭しましょう！');
 
@@ -88,7 +88,7 @@ const PcLinkPage = () => {
               setIsSyncFocusing(false);
               setSyncSessionData(null);
               
-              // 🌟【極上UXガード】3秒ルール（一時的な警告）の時は通知をスキップし、
+              // 3秒ルール（一時的な警告）の時は通知をスキップし、
               // 内省画面への移行など「真のセッション終了 (completed)」の時だけ終了バナーとトーストを起動する
               if (data.payload?.stop_reason === 'completed') {
                 sendNotification('集中ルーティンが終了しました', {
@@ -167,7 +167,7 @@ const PcLinkPage = () => {
     setToast({ message, type });
   };
 
-  // コピー処理 (バグの原因となっていた `navigator.clipboard.then` 記述エラーを完全に修正)
+  // コピー処理 
   const handleCopyUrl = () => {
     const pcUrl = "https://focusflow-73hm.onrender.com/";
     if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
@@ -318,7 +318,8 @@ const PcLinkPage = () => {
   // 🖥️ PC環境での同期中（スマホ裏返し状態）の「トースト通知UI」
   if (isSyncFocusing) {
     return (
-      <div className="fixed inset-0 bg-black/98 text-slate-100 flex flex-col items-center justify-center p-8 select-none z-[999] animate-in fade-in duration-700">
+      <div className="fixed inset-0 bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-8 select-none z-[999] animate-in fade-in duration-700">
+        {/* 背景のグローサークルエフェクト */}
         <div className="absolute inset-0 bg-indigo-950/20 blur-[120px] rounded-full" />
         
         <div className="w-full max-w-md text-center space-y-10 relative">
@@ -341,26 +342,30 @@ const PcLinkPage = () => {
 
           <div className="space-y-4">
             <h2 className="text-4xl font-black tracking-tighter text-white uppercase italic">
-              Focus Active
+              {t('pc_active_title', 'Focus Active')}
             </h2>
             <p className="text-slate-400 text-sm leading-relaxed font-bold tracking-[0.2em] uppercase">
-              {syncSessionData?.mode === 'timer' ? 'Timer Mode Synchronized' : 'Unlimited Focus Synchronized'}
+              {syncSessionData?.mode === 'timer' 
+                ? t('pc_active_timer_sub', 'Timer Mode Synchronized') 
+                : t('pc_active_unlimited_sub', 'Unlimited Focus Synchronized')}
             </p>
           </div>
 
           <Card className="bg-slate-900/40 border-slate-800/40 p-6 flex flex-col items-center justify-center gap-1">
-            <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Target Focus State</span>
+            <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">
+              {t('pc_active_state_label', 'Target Focus State')}
+            </span>
             <div className="text-lg font-black text-emerald-400 flex items-center gap-2 mt-1">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span>IN FLOW STATE</span>
+              <span>{t('pc_active_flow_state', 'IN FLOW STATE')}</span>
             </div>
           </Card>
           
           <p className="text-xs text-slate-600 font-bold tracking-widest uppercase animate-pulse">
-            Keep your phone face down on your desk.
+            {t('pc_active_instruction', 'Keep your phone face down on your desk.')}
           </p>
         </div>
       </div>

@@ -14,6 +14,7 @@ const resources = {
       "nav_history": "履歴",
       "nav_settings": "設定",
       "nav_logout": "ホーム",
+      "nav_pc_link": "PC連携",
 
       // ランディングページ
       "lp_hero_subtitle": "スマートフォンの「裏返し」をスイッチに、<br />深い集中状態へのルーティンを。",
@@ -84,6 +85,14 @@ const resources = {
       // トースト通知
       "recommend_break_long": "お疲れ様でした。長時間集中しましたね、少し目を休めませんか？ ☕",
       "pc_sync_started": "集中ルーティンが開始されました。作業に没頭しましょう！",
+
+      // PC没頭画面用
+      "pc_active_title": "集中ルーティン起動中",
+      "pc_active_unlimited_sub": "無制限集中モード計測中",
+      "pc_active_timer_sub": "目標タイマー作動中",
+      "pc_active_state_label": "現在の集中ステータス",
+      "pc_active_flow_state": "極限の集中状態 (FLOW)",
+      "pc_active_instruction": "スマートフォンを伏せたまま作業に没頭しましょう",
 
       // センサーエンジン (FocusDetectionEngine)
       "engine_capabilities": {
@@ -217,6 +226,7 @@ const resources = {
       "nav_history": "History",
       "nav_settings": "Settings",
       "nav_logout": "Logout",
+      "nav_pc_link": "PC Link",
 
       // Landing Page
       "lp_hero_subtitle": "Flip your phone to switch on focus,<br />and build your routine for deep concentration.",
@@ -287,6 +297,14 @@ const resources = {
       // 拡張通知
       "recommend_break_long": "Well done! You have focused for a long time. Why not take a break? ☕",
       "pc_sync_started": "Focus routine started. Let's immerse in your work!",
+
+      // PC没頭画面用
+      "pc_active_title": "Focus Active",
+      "pc_active_unlimited_sub": "Unlimited Focus Synchronized",
+      "pc_active_timer_sub": "Timer Mode Synchronized",
+      "pc_active_state_label": "Target Focus State",
+      "pc_active_flow_state": "IN FLOW STATE",
+      "pc_active_instruction": "Keep your phone face down on your desk.",
 
       // Sensor Engine (FocusDetectionEngine)
       "engine_capabilities": {

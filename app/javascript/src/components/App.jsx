@@ -26,7 +26,7 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
   const { t } = useTranslation();
   
   const navItems = [
-    { id: 'pc-link', icon: Monitor, label: 'PC Link' },
+    { id: 'pc-link', icon: Monitor, label: t('nav_pc_link') },
     { id: 'timer', icon: Timer, label: t('nav_timer') },
     { id: 'analysis', icon: LayoutDashboard, label: t('nav_analysis') },
     { id: 'history', icon: History, label: t('nav_history') },
@@ -86,7 +86,7 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
     );
   }
 
-  // スマホの場合はボトムナビを表示
+  // スマホの場合はボトムナビを表示 
   return (
     <div className="fixed inset-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
       <main className="flex-1 p-5 max-w-md mx-auto w-full overflow-y-auto relative pb-20">
