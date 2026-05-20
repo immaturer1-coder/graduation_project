@@ -4,11 +4,6 @@
     <title>FocusFlow</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     
-    <%= javascript_include_tag "application", 
-                               "data-turbo-track": "reload", 
-                               defer: true,
-                               "data-turbo-suppress-warning": true %>
-
     <script>
       /* React DevTools 警告抑制 */
       if (typeof window !== 'undefined') {
@@ -29,5 +24,10 @@
     <%= render "shared/flash" if lookup_context.exists?("shared/flash", [], true) %>
 
     <%= yield %>
+
+    <%= javascript_include_tag "application", 
+                               "data-turbo-track": "reload", 
+                               defer: true,
+                               "data-turbo-suppress-warning": true %>
   </body>
 </html>
