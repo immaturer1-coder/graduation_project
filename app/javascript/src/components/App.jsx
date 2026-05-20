@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, History, Settings, LogOut, ChevronRight, Activity, Timer, Monitor, Zap } from 'lucide-react';
+import { LayoutDashboard, History, Settings, LogOut, ChevronRight, Activity, Timer, Monitor, Zap, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // API & UI Components
 import { createFocusRecord } from '../api/focus_records';
 import LoadingOverlay from './ui/LoadingOverlay';
-
+import LogoutModal from './ui/LogoutModal';
 // 各ファイルへの正しい相対パス
 import LandingPage from '../pages/auth/LandingPage';
 import SignUpPage from '../pages/auth/SignUpPage';
@@ -24,7 +24,8 @@ import PcLinkPage from '../pages/main/PcLinkPage';
  */
 const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, isPc }) => {
   const { t } = useTranslation();
-  
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
   const navItems = [
     { id: 'pc-link', icon: Monitor, label: t('nav_pc_link') },
     { id: 'timer', icon: Timer, label: t('nav_timer') },
@@ -33,7 +34,6 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
     { id: 'settings', icon: Settings, label: t('nav_settings') },
   ];
 
-  // スマホ用ナビゲーション定義
   const mobileNavItems = [
     { id: 'timer', icon: Timer, label: t('nav_timer') },
     { id: 'analysis', icon: LayoutDashboard, label: t('nav_analysis') },
@@ -42,7 +42,6 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
     { id: 'logout', icon: LogOut, label: t('nav_logout'), isLogout: true },
   ];
 
-  // PCの場合はサイドバーを表示
   if (isPc) {
     return (
       <div className="fixed inset-0 bg-slate-950 text-slate-100 flex overflow-hidden">
@@ -64,7 +63,7 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
                 onClick={() => setCurrentPage(item.id)}
                 className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all ${
                   (item.id === 'settings' ? ['settings', 'terms', 'privacy'].includes(currentPage) : currentPage === item.id)
-                    ? 'bg-indigo-600 text-white' 
+                    ? 'bg-indigo-600 text-white'
                     : 'text-slate-400 hover:bg-slate-800'
                 }`}
               >
@@ -73,8 +72,8 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
               </button>
             ))}
           </nav>
-          <button 
-            onClick={onLogout}
+          <button
+            onClick={() => setIsLogoutModalOpen(true)}
             className="flex items-center gap-4 px-4 py-3 rounded-xl font-bold text-slate-500 hover:text-rose-400 transition-all mt-auto"
           >
             <LogOut size={20} />
@@ -82,29 +81,28 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
           </button>
         </aside>
         <main className="flex-1 overflow-y-auto relative">{children}</main>
+        <LogoutModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} onConfirm={onLogout} />
       </div>
     );
   }
 
-  // スマホの場合はボトムナビを表示 
   return (
     <div className="fixed inset-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
       <main className="flex-1 p-5 max-w-md mx-auto w-full overflow-y-auto relative pb-20">
         {children}
       </main>
-      
-      {/* フッターナビゲーション */}
+
       <nav className="fixed bottom-0 left-0 right-0 w-full bg-slate-900 backdrop-blur-xl py-2 h-16 flex items-center z-50">
         <div className="flex w-full items-center justify-around px-2">
           {mobileNavItems.map((item) => {
-            const isActive = item.id === 'settings' 
+            const isActive = item.id === 'settings'
               ? ['settings', 'terms', 'privacy', 'pc-link'].includes(currentPage)
               : currentPage === item.id;
 
             return (
-              <button 
+              <button
                 key={item.id}
-                onClick={() => item.isLogout ? onLogout() : setCurrentPage(item.id)} 
+                onClick={() => item.isLogout ? setIsLogoutModalOpen(true) : setCurrentPage(item.id)}
                 className="flex flex-col items-center justify-center gap-1 flex-1 transition-all active:scale-95"
               >
                 <div className={`relative p-1 transition-colors duration-300 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}>
@@ -123,6 +121,7 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
           })}
         </div>
       </nav>
+      <LogoutModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} onConfirm={onLogout} />
     </div>
   );
 };
@@ -172,7 +171,7 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isPc, setIsPc] = useState(false);
-  
+
   const [currentFocusData, setCurrentFocusData] = useState(null);
   const [historyKey, setHistoryKey] = useState(0);
 
@@ -217,11 +216,21 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentPage('landing');
-    setHistory([]);
-    setCurrentFocusData(null);
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/users/sign_out', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+        }
+      });
+      if (response.ok) {
+        window.location.href = '/users/sign_in';
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const playAlarm = () => {
@@ -263,7 +272,7 @@ export default function App() {
       case 'reset':   return <ResetPasswordPage onNavigate={navigate} />;
       case 'terms':   return <TermsPage onNavigate={goBack} />;
       case 'privacy': return <PrivacyPage onNavigate={goBack} />;
-      default:         return <LandingPage onNavigate={navigate} />;
+      default:          return <LandingPage onNavigate={navigate} />;
     }
   };
 
@@ -295,13 +304,13 @@ export default function App() {
 
             {currentPage === 'analysis' && (
               <div className={isPc ? "p-10" : ""}>
-                <AnalysisPage 
-                  focusData={currentFocusData} 
+                <AnalysisPage
+                  focusData={currentFocusData}
                   onBack={() => setCurrentPage('timer')}
                 />
               </div>
             )}
-            
+
             {currentPage === 'history' && (
               <div className={isPc ? "p-10" : ""}>
                 <HistoryPage key={historyKey} />

@@ -13,8 +13,14 @@ const resources = {
       "nav_analysis": "分析",
       "nav_history": "履歴",
       "nav_settings": "設定",
-      "nav_logout": "ホーム",
+      "nav_logout": "ログアウト",
       "nav_pc_link": "PC連携",
+
+      // モーダル用追加
+      "logout_title": "ログアウト",
+      "logout_message": "本当にログアウトしますか？\nPC等との連携も安全に終了されます。",
+      "logout_confirm": "ログアウト",
+      "logout_cancel": "キャンセル",
 
       // ランディングページ
       "lp_hero_subtitle": "スマートフォンの「裏返し」をスイッチに、<br />深い集中状態へのルーティンを。",
@@ -120,7 +126,7 @@ const resources = {
       "loading_logs": "ログを読み込み中...",
       "no_sessions": "セッション履歴がありません",
 
-      // 分析・履歴詳細 
+      // 分析・履歴詳細
       "focus_report_header": "集中レポート詳細",
       "detail_mode_label": "計測モード",
       "detail_timer_label": "タイマー",
@@ -134,7 +140,7 @@ const resources = {
       "no_reflection": "記録されたメモはありません",
       "ai_analysis": "AI 解析レポート",
 
-      // 分析画面 
+      // 分析画面
       "analysis_title": "分析レポート",
       "coming_soon_graph": "集中推移グラフ (準備中)",
       "ai_advisor_label": "AI アドバイザー",
@@ -227,6 +233,12 @@ const resources = {
       "nav_settings": "Settings",
       "nav_logout": "Logout",
       "nav_pc_link": "PC Link",
+
+      // モーダル用追加
+      "logout_title": "Logout",
+      "logout_message": "Are you sure you want to log out?\nYour connection to PC will also be safely terminated.",
+      "logout_confirm": "Logout",
+      "logout_cancel": "Cancel",
 
       // Landing Page
       "lp_hero_subtitle": "Flip your phone to switch on focus,<br />and build your routine for deep concentration.",
@@ -442,7 +454,7 @@ i18n
       caches: ['localStorage'],
     },
     interpolation: {
-      escapeValue: false 
+      escapeValue: false
     }
   });
 
