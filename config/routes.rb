@@ -26,6 +26,10 @@ Rails.application.routes.draw do
     end
   end
 
+  # 健康診断のドア
+  get '/health/redis', to: 'redis_health_checks#show'
+
+
   # 5. React Router / SPA 対策 
   get '*path', to: 'static_pages#landing', constraints: ->(req) {
     !req.xhr? &&
