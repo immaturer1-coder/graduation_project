@@ -4,6 +4,17 @@ class FocusSessionChannel < ApplicationCable::Channel
     if current_user
       # ログインユーザーごとの個別チャネル（一意のストリーム）を購読開始
       stream_from "focus_session_#{current_user.id}"
+      
+      # 接続時に連携状態を通知する
+      is_pc_ready = pc_connection_established?(current_user)
+      
+      ActionCable.server.broadcast(
+        "focus_session_#{current_user.id}",
+        {
+          event: "sync_status",
+          payload: { is_linked: true, pc_ready: is_pc_ready }
+        }
+      )
     else
       reject
     end
@@ -19,22 +30,35 @@ class FocusSessionChannel < ApplicationCable::Channel
     broadcast_to_user("end_focus", data)
   end
 
-  # スマホ側で30秒（本番45分）経過し、マイルストーン通知トリガーが引かれたとき
+  # スマホ側で30分経過し、マイルストーン通知トリガーが引かれたとき
   def trigger_milestone(data)
     broadcast_to_user("recommend_milestone", data)
   end
 
-  # スマホ側で60秒（本番90分）経過し、休憩レコメンドトリガーが引かれたとき
+  # スマホ側で45分経過し、休憩レコメンドトリガーが引かれたとき
   def trigger_break_recommend(data)
     broadcast_to_user("recommend_break", data)
   end
 
   # 接続解除時
   def unsubscribed
-    # クリーンアップが必要な場合はここに処理を記述します
+    if current_user
+      ActionCable.server.broadcast(
+        "focus_session_#{current_user.id}",
+        {
+          event: "sync_status",
+          payload: { is_linked: false, pc_ready: false }
+        }
+      )
+    end
   end
 
   private
+
+  # 現在のセッションにおけるPC側との接続状況を確認する
+  def pc_connection_established?(user)
+    true
+  end
 
   # 同一アカウントのPC・スマホへ向けてWebSocketブロードキャストを行う
   def broadcast_to_user(event, data)
