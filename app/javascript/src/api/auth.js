@@ -5,6 +5,13 @@ import axiosInstance from '../utils/axios';
  */
 
 /**
+ * ログインユーザーIDを取得する関数
+ */
+export const getAuthUserId = () => {
+  return window.current_user?.id || null;
+};
+
+/**
  * ログイン処理
  */
 export const login = async (email, password) => {

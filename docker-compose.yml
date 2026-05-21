@@ -6,6 +6,11 @@ services:
     environment:
       POSTGRES_PASSWORD: password
 
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
   web:
     build:
       context: .
@@ -23,15 +28,14 @@ services:
       "
     volumes:
       - .:/app
-    # env_fileを追加して .env ファイルを読み込む
     env_file:
       - .env
     environment:
       POSTGRES_PASSWORD: password
-      # Gemini APIキーをコンテナに注入
       GEMINI_API_KEY: ${GEMINI_API_KEY}
     depends_on:
       - db
+      - redis  # redis が先に起動するように依存関係を追加
 
   proxy:
     image: nginx:alpine

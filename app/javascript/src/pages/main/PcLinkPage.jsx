@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  Smartphone, 
-  Bell, 
-  ShieldCheck, 
-  Zap, 
-  Monitor, 
-  Info, 
-  ExternalLink, 
-  ChevronRight 
+import {
+  Smartphone,
+  Bell,
+  ShieldCheck,
+  Zap,
+  Monitor,
+  Info,
+  ExternalLink,
+  ChevronRight
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import PrimaryButton from '../../components/ui/PrimaryButton';
@@ -25,11 +25,12 @@ const PcLinkPage = () => {
   const { t, i18n } = useTranslation();
   const [isMobile, setIsMobile] = useState(false);
   const [toast, setToast] = useState(null);
-  
+
   // スマホ連動のリアルタイム通信ステータス
   const [isSyncFocusing, setIsSyncFocusing] = useState(false); // スマホが現在裏返し集中中か
   const [syncSessionData, setSyncSessionData] = useState(null); // 同期された時間等の設定情報
-  
+  const [isPcLinked, setIsPcLinked] = useState(false); // 【修正】PC連携ステータス管理
+
   const channelRef = useRef(null);
   const { permission, requestPermission, sendNotification } = useNotification();
   const isPermissionGranted = permission === 'granted';
@@ -42,26 +43,34 @@ const PcLinkPage = () => {
     }
   }, []);
 
-  // --- ActionCableによるリアルタイム双方向連携の購読・受信処理 (PC側のみ稼働) ---
+  // --- ActionCableによるリアルタイム双方向連携の購読・受信処理 ---
   useEffect(() => {
-    // 送信元となるスマホ側（isMobile）では購読を行わず、表示受信側となるPCブラウザでのみ接続します
-    if (isMobile) return;
-
     const consumer = getConsumer();
     if (consumer) {
       channelRef.current = consumer.subscriptions.create(
         { channel: 'FocusSessionChannel' },
         {
           connected() {
-            console.log('[WebSocket] PC connected to FocusSessionChannel');
+            console.log('[WebSocket] Connected to FocusSessionChannel');
           },
           disconnected() {
-            console.log('[WebSocket] PC disconnected from FocusSessionChannel');
+            console.log('[WebSocket] Disconnected from FocusSessionChannel');
             setIsSyncFocusing(false);
+            setIsPcLinked(false);
           },
           received(data) {
-            console.log('[WebSocket] PC received broadcast message:', data);
-            
+            console.log('[WebSocket] Received broadcast message:', data);
+
+            // PC連携ステータスの同期処理（全デバイス共通）
+            if (data.event === 'sync_status') {
+              console.log('[WebSocket] Sync status updated:', data.payload);
+              setIsPcLinked(data.payload.is_linked);
+              return;
+            }
+
+            // 以下PC側でのみ動作させる通知ロジック（isMobile判定によるガード）
+            if (isMobile) return;
+
             if (data.event === 'start_focus') {
               // スマホが裏返されて集中がスタートした瞬間
               setIsSyncFocusing(true);
@@ -87,7 +96,7 @@ const PcLinkPage = () => {
               // スマホが表に戻された、またはセッションを完了した瞬間
               setIsSyncFocusing(false);
               setSyncSessionData(null);
-              
+
               // 3秒ルール（一時的な警告）の時は通知をスキップし、
               // 内省画面への移行など「真のセッション終了 (completed)」の時だけ終了バナーとトーストを起動する
               if (data.payload?.stop_reason === 'completed') {
@@ -138,7 +147,7 @@ const PcLinkPage = () => {
     return () => {
       if (channelRef.current) {
         channelRef.current.unsubscribe();
-        console.log('[WebSocket] PC unsubscribed from FocusSessionChannel');
+        console.log('[WebSocket] Unsubscribed from FocusSessionChannel');
       }
     };
   }, [isMobile, sendNotification, t]);
@@ -167,7 +176,7 @@ const PcLinkPage = () => {
     setToast({ message, type });
   };
 
-  // コピー処理 
+  // コピー処理
   const handleCopyUrl = () => {
     const pcUrl = "https://focusflow-73hm.onrender.com/";
     if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
@@ -205,7 +214,7 @@ const PcLinkPage = () => {
           />
         )}
         <div className="w-full max-w-md py-10 space-y-8">
-          
+
           {/* ヘッダー */}
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
@@ -215,6 +224,10 @@ const PcLinkPage = () => {
             <h1 className="text-2xl font-black tracking-tighter text-white whitespace-pre-wrap">
               {t('pc_link_title')}
             </h1>
+            {/* 【修正】ステータス表示追加 */}
+            <div className={`mt-2 text-xs font-bold ${isPcLinked ? 'text-emerald-400' : 'text-slate-500'}`}>
+              {isPcLinked ? '● PC連携中' : '○ PC未連携'}
+            </div>
           </div>
 
           {/* ガイドセクション */}
@@ -282,8 +295,8 @@ const PcLinkPage = () => {
                     </span>
                     <span className="text-[11px] font-black tracking-wider">{toast.message}</span>
                   </div>
-                  <button 
-                    onClick={() => setToast(null)} 
+                  <button
+                    onClick={() => setToast(null)}
                     className="text-[10px] text-emerald-400/60 hover:text-emerald-400 font-bold uppercase tracking-wider"
                   >
                     Close
@@ -292,7 +305,7 @@ const PcLinkPage = () => {
               </div>
             )}
 
-            <button 
+            <button
               onClick={handleCopyUrl}
               className="w-full p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-between active:bg-indigo-500/20 transition-colors"
             >
@@ -321,9 +334,9 @@ const PcLinkPage = () => {
       <div className="fixed inset-0 bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-8 select-none z-[999] animate-in fade-in duration-700">
         {/* 背景のグローサークルエフェクト */}
         <div className="absolute inset-0 bg-indigo-950/20 blur-[120px] rounded-full" />
-        
+
         <div className="w-full max-w-md text-center space-y-10 relative">
-          
+
           {/* 同期中インアプリトースト通知 */}
           {toast && (
             <Toast
@@ -345,8 +358,8 @@ const PcLinkPage = () => {
               {t('pc_active_title', 'Focus Active')}
             </h2>
             <p className="text-slate-400 text-sm leading-relaxed font-bold tracking-[0.2em] uppercase">
-              {syncSessionData?.mode === 'timer' 
-                ? t('pc_active_timer_sub', 'Timer Mode Synchronized') 
+              {syncSessionData?.mode === 'timer'
+                ? t('pc_active_timer_sub', 'Timer Mode Synchronized')
                 : t('pc_active_unlimited_sub', 'Unlimited Focus Synchronized')}
             </p>
           </div>
@@ -363,7 +376,7 @@ const PcLinkPage = () => {
               <span>{t('pc_active_flow_state', 'IN FLOW STATE')}</span>
             </div>
           </Card>
-          
+
           <p className="text-xs text-slate-600 font-bold tracking-widest uppercase animate-pulse">
             {t('pc_active_instruction', 'Keep your phone face down on your desk.')}
           </p>
@@ -383,7 +396,7 @@ const PcLinkPage = () => {
         />
       )}
       <div className="w-full max-w-md flex-grow flex flex-col justify-center py-12 space-y-8 text-center">
-        
+
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
             <Zap size={12} />
@@ -441,7 +454,7 @@ const PcLinkPage = () => {
         <div className="space-y-4 pb-8">
           {!isPermissionGranted ? (
             <div className="space-y-3">
-              <PrimaryButton 
+              <PrimaryButton
                 onClick={handleRequestPermission}
                 className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 group transition-transform active:scale-95"
               >

@@ -22,6 +22,7 @@ import { getConsumer } from '../../utils/cable';
 // フック・ロジック
 import { useConcentrationLogic } from '../../hooks/useConcentrationLogic';
 import { useSensorLogger } from '../../hooks/useSensorLogger';
+import { getAuthUserId } from '../../api/auth';
 
 /**
  * 集中タイマーの表示レイヤー（リアルタイムPC同期送信 ＆ 表示時間完全同期対応）
@@ -33,9 +34,9 @@ const ConcentrationTimer = ({ onComplete }) => {
   const logic = useConcentrationLogic(onComplete);
 
   // PCとの連携状態を管理するState
-  const [isPcLinked] = useState(true);
+  const [isPcLinked, setIsPcLinked] = useState(false);
 
-  // WebSocket of チャネル購読インスタンスを管理するRef
+  // WebSocket チャネル購読インスタンスを管理するRef
   const channelRef = useRef(null);
 
   // 繰り返し通知を行うため、最後に通知を発火したインターバル回数を追跡するRef
@@ -77,15 +78,31 @@ const ConcentrationTimer = ({ onComplete }) => {
   useEffect(() => {
     const consumer = getConsumer();
     if (consumer) {
-      // Railsの FocusSessionChannel を安全に購読
+      // ログインユーザーIDを取得
+      const authUserId = getAuthUserId(); 
+
+      // Railsの FocusSessionChannel をユーザー固有IDを付与して購読
       channelRef.current = consumer.subscriptions.create(
-        { channel: 'FocusSessionChannel' },
+        { channel: 'FocusSessionChannel', user_id: authUserId },
         {
           connected() {
-            console.log('[WebSocket] Connected to FocusSessionChannel');
+            // キャッシュが更新されたか確認するための目印を追加しました
+            console.log('[WebSocket] Connected to FocusSessionChannel (Latest Build)');
           },
           disconnected() {
             console.log('[WebSocket] Disconnected from FocusSessionChannel');
+            setIsPcLinked(false);
+          },
+          received(data) {
+            // 受信したデータを全てコンソールに出力するデバッグログ
+            console.log("WebSocketメッセージ受信:", data);
+
+            // ここで 'sync_status' を受け取ってステートを更新する
+            if (data.event === 'sync_status') {
+              console.log("切り替え実行: isPcLinked を", data.payload.is_linked && data.payload.pc_ready, "に変更します");
+              // 連携が確立しており、かつPC側も準備完了(pc_ready)している場合のみ「連携中」にする
+              setIsPcLinked(data.payload.is_linked && data.payload.pc_ready);
+            }
           }
         }
       );
@@ -135,7 +152,7 @@ const ConcentrationTimer = ({ onComplete }) => {
         elapsed_seconds: elapsedSeconds
       });
     }
-  }, [time, selectedMode, isFocusActive]); // 画面の time が進むたびに正確に呼び出されます
+  }, [time, selectedMode, isFocusActive]); 
 
   // --- セッション全体のリセット制御 ---
   useEffect(() => {
