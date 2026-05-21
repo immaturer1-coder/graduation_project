@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, createContext, useContext } from 'react';
 import { LayoutDashboard, History, Settings, LogOut, ChevronRight, Activity, Timer, Monitor, Zap, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getConsumer } from '../utils/cable';
 
 // API & UI Components
 import { createFocusRecord } from '../api/focus_records';
@@ -18,6 +19,10 @@ import HistoryPage from '../pages/main/HistoryPage';
 import FocusDetectionPage from '../pages/main/FocusDetectionPage';
 import ConcentrationTimer from '../pages/main/ConcentrationTimer';
 import PcLinkPage from '../pages/main/PcLinkPage';
+
+// Toast Context
+const ToastContext = createContext();
+export const useToast = () => useContext(ToastContext);
 
 /**
  * 認証後の共通レイアウト
@@ -61,11 +66,10 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
               <button
                 key={item.id}
                 onClick={() => setCurrentPage(item.id)}
-                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all ${
-                  (item.id === 'settings' ? ['settings', 'terms', 'privacy'].includes(currentPage) : currentPage === item.id)
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-400 hover:bg-slate-800'
-                }`}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all ${(item.id === 'settings' ? ['settings', 'terms', 'privacy'].includes(currentPage) : currentPage === item.id)
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-400 hover:bg-slate-800'
+                  }`}
               >
                 <item.icon size={20} />
                 <span>{item.label}</span>
@@ -111,9 +115,8 @@ const AuthenticatedLayout = ({ children, currentPage, setCurrentPage, onLogout, 
                     <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full -z-10" />
                   )}
                 </div>
-                <span className={`text-[10px] font-bold tracking-tight transition-colors duration-300 ${
-                  isActive ? 'text-indigo-400' : 'text-slate-500'
-                }`}>
+                <span className={`text-[10px] font-bold tracking-tight transition-colors duration-300 ${isActive ? 'text-indigo-400' : 'text-slate-500'
+                  }`}>
                   {item.label}
                 </span>
               </button>
@@ -171,11 +174,19 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isPc, setIsPc] = useState(false);
+  const [toasts, setToasts] = useState([]);
 
   const [currentFocusData, setCurrentFocusData] = useState(null);
   const [historyKey, setHistoryKey] = useState(0);
 
   const audioRef = useRef(null);
+
+  const showToast = (message, type = 'info') => {
+    console.log("[Toast] showToast called:", message);
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  };
 
   useEffect(() => {
     const checkDevice = () => {
@@ -186,6 +197,31 @@ export default function App() {
     window.addEventListener('resize', checkDevice);
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
+
+  // WebSocket接続の管理
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const consumer = getConsumer();
+    const subscription = consumer.subscriptions.create("FocusSessionChannel", {
+      received(data) {
+        const message = data.message || 'Notification';
+        const type = data.type || 'info';
+
+        // 1. UI上のトーストを表示
+        showToast(message, type);
+
+        // 2. PC環境であればブラウザ通知も送出
+        if (isPc && "Notification" in window && Notification.permission === "granted") {
+          new Notification("FocusFlow", { body: message });
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [isAuthenticated]);
 
   const navigate = (page) => {
     setHistory(prev => [...prev, currentPage]);
@@ -267,72 +303,85 @@ export default function App() {
   const renderAuthPages = () => {
     switch (currentPage) {
       case 'landing': return <LandingPage onNavigate={navigate} />;
-      case 'signup':  return <SignUpPage onNavigate={navigate} onAuthSuccess={handleAuthSuccess} />;
-      case 'login':   return <LoginPage onNavigate={navigate} onAuthSuccess={handleAuthSuccess} />;
-      case 'reset':   return <ResetPasswordPage onNavigate={navigate} />;
-      case 'terms':   return <TermsPage onNavigate={goBack} />;
+      case 'signup': return <SignUpPage onNavigate={navigate} onAuthSuccess={handleAuthSuccess} />;
+      case 'login': return <LoginPage onNavigate={navigate} onAuthSuccess={handleAuthSuccess} />;
+      case 'reset': return <ResetPasswordPage onNavigate={navigate} />;
+      case 'terms': return <TermsPage onNavigate={goBack} />;
       case 'privacy': return <PrivacyPage onNavigate={goBack} />;
-      default:          return <LandingPage onNavigate={navigate} />;
+      default: return <LandingPage onNavigate={navigate} />;
     }
   };
 
   return (
-    <div className="w-full min-h-screen bg-black text-white">
-      {!isAuthenticated ? (
-        renderAuthPages()
-      ) : (
-        <AuthenticatedLayout currentPage={currentPage} setCurrentPage={handlePageChange} onLogout={handleLogout} isPc={isPc}>
-          {isSaving && <LoadingOverlay message="Analyzing Session..." />}
-
-          <audio
-            ref={audioRef}
-            src="https://actions.google.com/sounds/v1/alarms/alarm_clock_ringing_proximity.ogg"
-            loop
-          />
-
-          <div className="h-full w-full relative">
-            {currentPage === 'timer' && (
-              isPc ? (
-                <FocusDetectionPage onNavigate={setCurrentPage} />
-              ) : (
-                <ConcentrationTimer
-                  onComplete={handleFocusComplete}
-                  onTimeUp={playAlarm}
-                />
-              )
-            )}
-
-            {currentPage === 'analysis' && (
-              <div className={isPc ? "p-10" : ""}>
-                <AnalysisPage
-                  focusData={currentFocusData}
-                  onBack={() => setCurrentPage('timer')}
-                />
+    <ToastContext.Provider value={showToast}>
+      <div className="w-full min-h-screen bg-black text-white">
+        {/* Toast Container */}
+        {isPc && (
+          <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+            {toasts.map(t => (
+              <div key={t.id} className={`p-4 rounded-xl shadow-lg text-white font-bold text-xs pointer-events-auto bg-indigo-600`}>
+                {t.message}
               </div>
-            )}
-
-            {currentPage === 'history' && (
-              <div className={isPc ? "p-10" : ""}>
-                <HistoryPage key={historyKey} />
-              </div>
-            )}
-
-            {currentPage === 'settings' && <SettingsPage onNavigate={navigate} />}
-
-            {currentPage === 'pc-link' && (
-              <div className={isPc ? "" : "absolute inset-0 z-50 bg-slate-950"}>
-                <PcLinkPage onNavigate={goBack} />
-              </div>
-            )}
-
-            {(currentPage === 'terms' || currentPage === 'privacy') && (
-              <div className="absolute inset-0 z-50 bg-slate-950">
-                {currentPage === 'terms' ? <TermsPage onNavigate={goBack} /> : <PrivacyPage onNavigate={goBack} />}
-              </div>
-            )}
+            ))}
           </div>
-        </AuthenticatedLayout>
-      )}
-    </div>
+        )}
+
+        {!isAuthenticated ? (
+          renderAuthPages()
+        ) : (
+          <AuthenticatedLayout currentPage={currentPage} setCurrentPage={handlePageChange} onLogout={handleLogout} isPc={isPc}>
+            {isSaving && <LoadingOverlay message="Analyzing Session..." />}
+
+            <audio
+              ref={audioRef}
+              src="https://actions.google.com/sounds/v1/alarms/alarm_clock_ringing_proximity.ogg"
+              loop
+            />
+
+            <div className="h-full w-full relative">
+              {currentPage === 'timer' && (
+                isPc ? (
+                  <FocusDetectionPage onNavigate={setCurrentPage} />
+                ) : (
+                  <ConcentrationTimer
+                    onComplete={handleFocusComplete}
+                    onTimeUp={playAlarm}
+                  />
+                )
+              )}
+
+              {currentPage === 'analysis' && (
+                <div className={isPc ? "p-10" : ""}>
+                  <AnalysisPage
+                    focusData={currentFocusData}
+                    onBack={() => setCurrentPage('timer')}
+                  />
+                </div>
+              )}
+
+              {currentPage === 'history' && (
+                <div className={isPc ? "p-10" : ""}>
+                  <HistoryPage key={historyKey} />
+                </div>
+              )}
+
+              {currentPage === 'settings' && <SettingsPage onNavigate={navigate} />}
+
+              {currentPage === 'pc-link' && (
+                <div className={isPc ? "" : "absolute inset-0 z-50 bg-slate-950"}>
+                  <PcLinkPage onNavigate={goBack} />
+                </div>
+              )}
+
+              {(currentPage === 'terms' || currentPage === 'privacy') && (
+                <div className="absolute inset-0 z-50 bg-slate-950">
+                  {currentPage === 'terms' ? <TermsPage onNavigate={goBack} /> : <PrivacyPage onNavigate={goBack} />}
+                </div>
+              )}
+            </div>
+          </AuthenticatedLayout>
+        )}
+      </div>
+    </ToastContext.Provider>
   );
 }
