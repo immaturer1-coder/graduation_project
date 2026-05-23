@@ -169,6 +169,11 @@ const SettingsPage = ({ onNavigate }) => {
 };
 
 export default function App() {
+  // RailsのDeviseページにいる場合はReactの描画をスキップしてRailsのViewを表示させる
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/users')) {
+    return null;
+  }
+
   const [currentPage, setCurrentPage] = useState('landing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [history, setHistory] = useState([]);

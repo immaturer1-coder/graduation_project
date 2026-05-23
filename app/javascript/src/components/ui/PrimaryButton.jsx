@@ -4,9 +4,10 @@ import React from 'react';
  * Path: app/javascript/src/components/ui/PrimaryButton.jsx
  * FocusFlow専用のプライマリアクションボタン
  */
-const PrimaryButton = ({ children, onClick, icon: Icon, disabled = false, className = "" }) => {
+const PrimaryButton = ({ children, onClick, icon: Icon, disabled = false, className = "", type = "button" }) => {
   return (
     <button
+      type={type} 
       onClick={onClick}
       disabled={disabled}
       className={`

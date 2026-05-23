@@ -3,7 +3,7 @@
 # Devise configuration file
 Devise.setup do |config|
   # ==> Mailer Configuration
-  config.mailer_sender = 'please-change-me-at-config-initializers-devise@example.com'
+  config.mailer_sender = 'noreply@focusflow.jp'
 
   # ==> ORM configuration
   require 'devise/orm/active_record'

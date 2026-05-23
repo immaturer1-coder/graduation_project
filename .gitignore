@@ -37,3 +37,5 @@
 
 # APIキーの「.envファイル」をGitの管理から外す
 .env
+
+vendor/bundle
