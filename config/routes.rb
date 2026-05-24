@@ -10,7 +10,8 @@ Rails.application.routes.draw do
   # 2. Deviseの設定（API通信用として残す）
   devise_for :users, controllers: {
     sessions: 'users/sessions',
-    registrations: 'users/registrations'
+    registrations: 'users/registrations',
+    passwords: 'users/passwords'
   }
 
   # 3. ルートパス設定

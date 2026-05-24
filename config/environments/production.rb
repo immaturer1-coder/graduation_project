@@ -1,4 +1,5 @@
 require "active_support/core_ext/integer/time"
+require Rails.root.join('app', 'mailers', 'resend_delivery_method')
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -82,12 +83,23 @@ Rails.application.configure do
   # require "syslog/logger"
   # config.logger = ActiveSupport::TaggedLogging.new(Syslog::Logger.new "app-name")
 
-  if ENV["RAILS_LOG_TO_STDOUT"].present?
-    logger           = ActiveSupport::Logger.new(STDOUT)
-    logger.formatter = config.log_formatter
-    config.logger    = ActiveSupport::TaggedLogging.new(logger)
+  # メールのリンク設定
+  config.action_mailer.default_url_options = { host: 'focusflow-73hm.onrender.com', protocol: 'https' }
+
+  # --- デバッグ追加 ---
+  puts "DEBUG_ENV_CHECK: RESEND_API_KEY is #{ENV['RESEND_API_KEY'].nil? ? 'NIL' : 'PRESENT'}"
+  
+  if ENV['RESEND_API_KEY'].present?
+    Resend.api_key = ENV['RESEND_API_KEY']
+    puts "DEBUG_DEPLOY: Resend.api_key has been set globally."
+  else
+    puts "FATAL: RESEND_API_KEY is missing from environment!"
   end
 
+  config.action_mailer.delivery_method = :resend
+  config.action_mailer.add_delivery_method :resend, ResendDeliveryMethod, 
+    api_key: ENV['RESEND_API_KEY']
+    
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 end

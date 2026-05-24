@@ -33,12 +33,13 @@ Rails.application.configure do
     config.cache_store = :null_store
   end
 
-  # メールURLのデフォルトホスト設定
-  config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
+  # メールURLのデフォルトホスト設定（HTTPS指定）
+  config.action_mailer.default_url_options = { host: '192.168.1.4', protocol: 'https' }
 
-  # --- 追記: Letter Opener Web の設定 ---
-  # 開発環境で送信されたメールをブラウザで確認できるようにする
-  config.action_mailer.delivery_method = :letter_opener_web
+  # --- 修正: メール配送設定をSMTPに統一 ---
+  # 開発環境で送信されたメールをMailHogで確認できるようにする
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = { address: 'mailhog', port: 1025 }
   # メールの送信に失敗した時にエラーを発生させる
   config.action_mailer.raise_delivery_errors = true
   # --------------------------------------

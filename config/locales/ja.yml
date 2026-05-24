@@ -40,6 +40,14 @@ ja:
     passwords:
       send_instructions: "パスワードの再設定方法をメールで送信しました。"
       updated: "パスワードが正しく変更されました。"
+    mailer:
+      reset_password_instructions:
+        subject: "パスワードの再設定"
+        greeting: "%{resource} 様"
+        instruction: "パスワード再設定のリクエストを受け付けました。以下のリンクから変更できます。"
+        action: "パスワードを変更する"
+        ignore: "心当たりがない場合は、このメールを無視してください。"
+        instruction_2: "このリンクにアクセスして新しいパスワードを作成するまで、現在のパスワードは変更されません。"
 
   # データベースの項目名とバリデーションエラーの翻訳
   activerecord:

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Mail, ShieldCheck, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import PrimaryButton from '../../components/ui/PrimaryButton';
 import InputField from '../../components/ui/InputField';
+import Toast from '../../components/ui/Toast';
 
 /**
  * パスワード再設定ページ
@@ -10,42 +11,52 @@ import InputField from '../../components/ui/InputField';
 const ResetPasswordPage = ({ onNavigate }) => {
   const { t } = useTranslation();
   
-  // 状態管理
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState(null);
 
   // 送信ハンドラー
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
-    
+  const handleRequest = async () => {
     if (!email) {
-      setError(t('error_email_required'));
+      setToast({ message: t('error_email_required'), type: 'error' });
       return;
     }
 
-    setError('');
     setIsLoading(true);
+    setToast(null);
 
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = metaTag ? metaTag.content : '';
+    
     try {
-      // 擬似的なAPI通信のシミュレーション（2秒）
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      
-      console.log('Reset request for:', email);
-      setIsSent(true);
+      const response = await fetch('/users/password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ user: { email } }),
+      });
+
+      if (response.ok) {
+        setIsSent(true);
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setToast({ message: data.errors?.[0] || t('error_something_went_wrong'), type: 'error' });
+      }
     } catch (err) {
-      // エラー時も多言語化対応のキーを使用
-      setError(t('error_something_went_wrong'));
+      setToast({ message: t('error_something_went_wrong'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 送信完了画面
   if (isSent) {
     return (
       <div className="flex flex-col items-center justify-center fixed inset-0 p-6 bg-slate-950 select-none touch-none animate-in fade-in duration-500">
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         <div className="w-full max-w-sm text-center">
           <div className="mb-8">
             <div className="inline-flex p-4 rounded-full bg-emerald-500/10 text-emerald-400 mb-4 border border-emerald-500/20">
@@ -55,11 +66,9 @@ const ResetPasswordPage = ({ onNavigate }) => {
               {t('sent_success_title')}
             </h2>
             <p className="text-slate-400 text-sm mt-4 leading-relaxed">
-              {/* i18nextの補完機能があれば {email} を渡せますが、シンプルに表示 */}
               {t('sent_success_description').replace('{email}', email)}
             </p>
           </div>
-
           <PrimaryButton onClick={() => onNavigate('login')}>
             {t('back_to_login')}
           </PrimaryButton>
@@ -70,8 +79,8 @@ const ResetPasswordPage = ({ onNavigate }) => {
 
   return (
     <div className="flex flex-col items-center justify-center fixed inset-0 p-6 bg-slate-950 select-none touch-none">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       <div className="w-full max-w-sm text-center">
-        {/* ヘッダー部分 */}
         <div className="mb-8">
           <div className="inline-flex p-3 rounded-full bg-indigo-500/10 text-indigo-400 mb-4 border border-indigo-500/20">
             <ShieldCheck size={32} />
@@ -84,11 +93,8 @@ const ResetPasswordPage = ({ onNavigate }) => {
           </p>
         </div>
 
-        {/* フォームカード */}
-        <form 
-          onSubmit={handleSubmit}
-          className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl text-left"
-        >
+        {/* フォームタグ */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl text-left">
           <InputField 
             label={t('email_address')} 
             type="email" 
@@ -99,20 +105,13 @@ const ResetPasswordPage = ({ onNavigate }) => {
             disabled={isLoading}
           />
           
-          {error && (
-            <p className="text-red-400 text-[10px] font-bold uppercase mt-2 ml-1">
-              {error}
-            </p>
-          )}
-
           <div className="mt-6">
             <PrimaryButton 
-              type="submit"
-              onClick={handleSubmit}
+              onClick={handleRequest}
               disabled={isLoading}
             >
               {isLoading ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <Loader2 size={18} className="animate-spin" />
                   {t('sending')}
                 </div>
@@ -121,9 +120,8 @@ const ResetPasswordPage = ({ onNavigate }) => {
               )}
             </PrimaryButton>
           </div>
-        </form>
+        </div>
 
-        {/* 下部ナビゲーション */}
         <button 
           onClick={() => onNavigate('login')} 
           disabled={isLoading}

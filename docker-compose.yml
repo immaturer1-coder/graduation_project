@@ -11,6 +11,12 @@ services:
     ports:
       - "6379:6379"
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+      # ポート8025は外部公開せず、Nginxのみ経由させる
+
   web:
     build:
       context: .
@@ -32,10 +38,14 @@ services:
       - .env
     environment:
       POSTGRES_PASSWORD: password
+      GRADUATION_PROJECT_DATABASE_PASSWORD: password
+      HOST_URL: 192.168.1.4
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+      SMTP_HOST: mailhog
     depends_on:
       - db
-      - redis  # redis が先に起動するように依存関係を追加
+      - redis
+      - mailhog
 
   proxy:
     image: nginx:alpine
