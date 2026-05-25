@@ -34,8 +34,7 @@ Rails.application.configure do
   end
 
   # メールURLのデフォルトホスト設定（HTTPS指定）
-  config.action_mailer.default_url_options = { host: '192.168.1.4', protocol: 'https' }
-
+  config.action_mailer.default_url_options = { host: 'localhost', protocol: 'https' }
   # --- 修正: メール配送設定をSMTPに統一 ---
   # 開発環境で送信されたメールをMailHogで確認できるようにする
   config.action_mailer.delivery_method = :smtp

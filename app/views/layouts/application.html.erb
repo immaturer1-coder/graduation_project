@@ -3,38 +3,33 @@
   <head>
     <title>FocusFlow</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script>
-      /* ログインユーザーIDをReactから参照可能にする */
       <% if user_signed_in? %>
         window.current_user = { id: '<%= current_user.id %>' };
       <% else %>
         window.current_user = null;
       <% end %>
-
-      /* React DevTools 警告抑制 */
       if (typeof window !== 'undefined') {
         window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
       }
     </script>
-
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
   </head>
 
   <body class="bg-slate-950 text-slate-100 min-h-screen">
-    <%# React用のマウントポイントと、Railsが描画するHTML(yield)を共存させる %>
+    <%# 常に存在させることで、Reactのレンダリングミスを防ぐ %>
     <div id="root"></div>
 
-    <% if lookup_context.exists?("shared/flash", [], true) %>
-      <%= render "shared/flash" %>
+    <%# パスワード編集画面以外でRailsのビューを描画する %>
+    <% unless request.path == '/users/password/edit' %>
+      <% if lookup_context.exists?("shared/flash", [], true) %>
+        <%= render "shared/flash" %>
+      <% end %>
+      <%= yield %>
     <% end %>
-
-    <%= yield %>
 
     <%= javascript_include_tag "application", 
                                "data-turbo-track": "reload", 
@@ -42,45 +37,3 @@
                                "data-turbo-suppress-warning": true %>
   </body>
 </html>
-
-
-// Entry point for the build script in your package.json
-import "@hotwired/turbo-rails"
-import "./controllers"
-
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './src/components/App';
-
-// i18n の設定ファイルをインポート
-import './src/i18n';
-
-// グローバル変数でRootを保持し、二重初期化を防ぐ
-window.reactRoot = window.reactRoot || null;
-
-document.addEventListener('turbo:load', () => {
-  const container = document.getElementById('root');
-    
-  // Rails側のパス（/users等）の場合はReactをマウントしない
-  const isRailsPage = window.location.pathname.startsWith('/users');
-
-  if (container && !isRailsPage) {
-    if (!window.reactRoot) {
-      window.reactRoot = createRoot(container);
-    }
-      
-    window.reactRoot.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    );
-  }
-});
-
-// ページ遷移の直前にクリーンアップ
-document.addEventListener('turbo:before-cache', () => {
-  if (window.reactRoot) {
-    window.reactRoot.unmount();
-    window.reactRoot = null;
-  }
-});

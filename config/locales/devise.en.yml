@@ -63,3 +63,20 @@ en:
       not_saved:
         one: "1 error prohibited this %{resource} from being saved:"
         other: "%{count} errors prohibited this %{resource} from being saved:"
+
+ja:
+  errors:
+    messages:
+      invalid: "正しくありません。"
+      invalid_token: "パスワードのトークンが不正な値です。"
+      expired: "パスワード再設定用のリンクの有効期限が切れています。新しくリクエストしてください。"
+      not_found: "見つかりません。"
+      already_confirmed: "すでに確認済みです。"
+  devise:
+    failure:
+      invalid: "メールアドレスまたはパスワードが正しくありません。"
+    passwords:
+      no_token: "パスワード再設定メールからのリンク以外ではアクセスできません。"
+      send_instructions: "数分以内にパスワード再設定の手順をメールでお送りします。"
+      updated: "パスワードが正常に変更されました。"
+      updated_not_active: "パスワードが正常に変更されました。"
