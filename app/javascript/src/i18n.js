@@ -50,6 +50,12 @@ const resources = {
       "reset_password_title": "パスワードの再設定",
       "reset_password_description": "ご登録のメールアドレスを入力してください。再設定用の手順をお送りします。",
 
+      // パスワード再設定画面 (PasswordEditPage)
+      "reset_password_error": "トークンが不正か、有効期限切れです。",
+      "password_update_success": "パスワードが正常に更新されました。ログインしてください。",
+      "new_password": "新しいパスワード",
+      "update_password_button": "パスワードを更新",
+
       // タイマー・集中関連
       "select_mode": "モードを選択",
       "timer_mode": "タイマーモード",
@@ -267,6 +273,11 @@ const resources = {
       "welcome_back": "Welcome Back",
       "reset_password_title": "Reset Password",
       "reset_password_description": "Enter your email address. We will send you instructions to reset your password.",
+
+      // パスワード再設定画面 (PasswordEditPage)
+      "reset_password_error": "Token is invalid or expired.",
+      "password_update_success": "Password updated successfully. Please log in.",
+      "new_password": "New Password",
 
       // Timer / Focus (Main screens)
       "select_mode": "Select Mode",

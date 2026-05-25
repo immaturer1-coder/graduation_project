@@ -12,6 +12,7 @@ import LandingPage from '../pages/auth/LandingPage';
 import SignUpPage from '../pages/auth/SignUpPage';
 import LoginPage from '../pages/auth/LoginPage';
 import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
+import PasswordEditPage from '../pages/auth/PasswordEditPage';
 import TermsPage from '../pages/static/TermsPage';
 import PrivacyPage from '../pages/static/PrivacyPage';
 import AnalysisPage from '../pages/main/AnalysisPage';
@@ -169,17 +170,46 @@ const SettingsPage = ({ onNavigate }) => {
 };
 
 export default function App() {
-  // RailsのDeviseページにいる場合はReactの描画をスキップしてRailsのViewを表示させる
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/users')) {
+  const { t } = useTranslation();
+  const [toasts, setToasts] = useState([]);
+  const [flashMessage, setFlashMessage] = useState(null);
+
+  // パスワード更新フラッシュメッセージ用 (セッションストレージ経由で確実に表示)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('password_updated') === 'true') {
+      sessionStorage.setItem('pending_flash', t('password_update_success'));
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    const pending = sessionStorage.getItem('pending_flash');
+    if (pending) {
+      setFlashMessage(pending);
+      sessionStorage.removeItem('pending_flash');
+      setTimeout(() => setFlashMessage(null), 5000);
+    }
+  }, [t]);
+
+  // パスワード再設定画面へのアクセス時は専用ページを返す
+  if (typeof window !== 'undefined' && window.location.pathname === '/users/password/edit') {
+    return <PasswordEditPage />;
+  }
+  
+  // 他のDeviseパスワード関連パスはReactでレンダリングしない
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/users/password')) {
     return null;
   }
 
   const [currentPage, setCurrentPage] = useState('landing');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const meta = document.querySelector('meta[name="user-authenticated"]');
+    const content = meta ? meta.getAttribute('content') : null;
+    return content === 'true';
+  });
+  
   const [history, setHistory] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isPc, setIsPc] = useState(false);
-  const [toasts, setToasts] = useState([]);
 
   const [currentFocusData, setCurrentFocusData] = useState(null);
   const [historyKey, setHistoryKey] = useState(0);
@@ -187,7 +217,6 @@ export default function App() {
   const audioRef = useRef(null);
 
   const showToast = (message, type = 'info') => {
-    console.log("[Toast] showToast called:", message);
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
@@ -213,10 +242,8 @@ export default function App() {
         const message = data.message || 'Notification';
         const type = data.type || 'info';
 
-        // 1. UI上のトーストを表示
         showToast(message, type);
 
-        // 2. PC環境であればブラウザ通知も送出
         if (isPc && "Notification" in window && Notification.permission === "granted") {
           new Notification("FocusFlow", { body: message });
         }
@@ -226,7 +253,7 @@ export default function App() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isPc]);
 
   const navigate = (page) => {
     setHistory(prev => [...prev, currentPage]);
@@ -306,30 +333,41 @@ export default function App() {
   };
 
   const renderAuthPages = () => {
-    switch (currentPage) {
-      case 'landing': return <LandingPage onNavigate={navigate} />;
-      case 'signup': return <SignUpPage onNavigate={navigate} onAuthSuccess={handleAuthSuccess} />;
-      case 'login': return <LoginPage onNavigate={navigate} onAuthSuccess={handleAuthSuccess} />;
-      case 'reset': return <ResetPasswordPage onNavigate={navigate} />;
-      case 'terms': return <TermsPage onNavigate={goBack} />;
-      case 'privacy': return <PrivacyPage onNavigate={goBack} />;
-      default: return <LandingPage onNavigate={navigate} />;
-    }
+    return (
+      <>
+        {flashMessage && (
+          <div className="absolute top-0 w-full p-4 z-[9998] text-center">
+            <div className="inline-block bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg animate-in fade-in slide-in-from-top-2">
+              {flashMessage}
+            </div>
+          </div>
+        )}
+        {(() => {
+          switch (currentPage) {
+            case 'landing': return <LandingPage onNavigate={navigate} />;
+            case 'signup': return <SignUpPage onNavigate={navigate} onAuthSuccess={handleAuthSuccess} />;
+            case 'login': return <LoginPage onNavigate={navigate} onAuthSuccess={handleAuthSuccess} />;
+            case 'reset': return <ResetPasswordPage onNavigate={navigate} />;
+            case 'terms': return <TermsPage onNavigate={goBack} />;
+            case 'privacy': return <PrivacyPage onNavigate={goBack} />;
+            default: return <LandingPage onNavigate={navigate} />;
+          }
+        })()}
+      </>
+    );
   };
 
   return (
     <ToastContext.Provider value={showToast}>
       <div className="w-full min-h-screen bg-black text-white">
         {/* Toast Container */}
-        {isPc && (
-          <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
-            {toasts.map(t => (
-              <div key={t.id} className={`p-4 rounded-xl shadow-lg text-white font-bold text-xs pointer-events-auto bg-indigo-600`}>
-                {t.message}
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+          {toasts.map(t => (
+            <div key={t.id} className="p-4 rounded-xl shadow-lg text-white font-bold text-xs pointer-events-auto bg-indigo-600 animate-in slide-in-from-right-4">
+              {t.message}
+            </div>
+          ))}
+        </div>
 
         {!isAuthenticated ? (
           renderAuthPages()
