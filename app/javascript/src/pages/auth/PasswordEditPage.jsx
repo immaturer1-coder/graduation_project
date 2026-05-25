@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -7,6 +7,18 @@ export default function PasswordEditPage() {
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [error, setError] = useState(null);
+
+  // 改善点: 初回表示時のみページを強制リロードする（モバイルの縮小バグ対策）
+  useEffect(() => {
+    // すでにリロード済みかチェック
+    const hasReloaded = sessionStorage.getItem('password_page_reloaded');
+    
+    if (!hasReloaded) {
+      // まだリロードしていなければ、フラグを立ててリロード実行
+      sessionStorage.setItem('password_page_reloaded', 'true');
+      window.location.reload();
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,7 +42,8 @@ export default function PasswordEditPage() {
     const data = await response.json();
 
     if (response.ok) {
-      // サーバーから返却された redirect_path を使用して遷移
+      // 成功時、念のためフラグをクリアしてからリダイレクト
+      sessionStorage.removeItem('password_page_reloaded');
       window.location.href = data.redirect_path || '/';
     } else {
       setError(data.errors ? data.errors.join(', ') : t('reset_password_error'));
@@ -38,29 +51,29 @@ export default function PasswordEditPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-6">
-      <div className="w-full max-w-sm bg-slate-900 p-8 rounded-2xl border border-slate-800">
+    <div className="w-full min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6 overflow-x-hidden">
+      <div className="w-full max-w-sm bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-2xl">
         <div className="flex items-center gap-2 mb-8 justify-center">
-          <Zap className="text-indigo-400" />
-          <h1 className="text-xl font-black italic uppercase tracking-tighter text-white">FocusFlow</h1>
+          <Zap className="text-indigo-400 w-6 h-6" />
+          <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">FocusFlow</h1>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <p className="text-rose-400 text-xs font-bold">{error}</p>}
+          {error && <p className="text-rose-400 text-xs font-bold text-center">{error}</p>}
           <input
             type="password"
             placeholder={t('new_password')}
-            className="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg text-white"
+            className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
           <input
             type="password"
             placeholder={t('confirm_password')}
-            className="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg text-white"
+            className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
             value={passwordConfirmation}
             onChange={(e) => setPasswordConfirmation(e.target.value)}
           />
-          <button className="w-full py-3 bg-indigo-600 rounded-lg font-bold text-white hover:bg-indigo-500 transition-colors">
+          <button className="w-full py-4 mt-2 bg-indigo-600 rounded-xl font-bold text-white text-sm hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/20 active:scale-95">
             {t('update_password_button')}
           </button>
         </form>
