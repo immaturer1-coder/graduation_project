@@ -190,17 +190,15 @@ export default function App() {
     }
   }, [t]);
 
-  // パスワード再設定画面へのアクセス時は専用ページを返す
-  if (typeof window !== 'undefined' && window.location.pathname === '/users/password/edit') {
-    return <PasswordEditPage />;
-  }
-  
-  // 他のDeviseパスワード関連パスはReactでレンダリングしない
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/users/password')) {
-    return null;
-  }
+  // URLのパスに応じて初期ページを決定する関数
+  const getInitialPage = () => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/users/password/edit') {
+      return 'password_edit';
+    }
+    return 'landing';
+  };
 
-  const [currentPage, setCurrentPage] = useState('landing');
+  const [currentPage, setCurrentPage] = useState(getInitialPage);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const meta = document.querySelector('meta[name="user-authenticated"]');
     const content = meta ? meta.getAttribute('content') : null;
@@ -223,6 +221,16 @@ export default function App() {
   };
 
   useEffect(() => {
+    // WebView(メールアプリの内蔵ブラウザ等)で開かれた際の強制縮小バグを防ぐため、
+    // App.jsxのロード時に強力なviewport設定を強制上書きします。
+    let viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) {
+      viewportMeta = document.createElement('meta');
+      viewportMeta.name = 'viewport';
+      document.head.appendChild(viewportMeta);
+    }
+    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover');
+
     const checkDevice = () => {
       const width = window.innerWidth;
       setIsPc(width >= 1024);
@@ -350,6 +358,7 @@ export default function App() {
             case 'reset': return <ResetPasswordPage onNavigate={navigate} />;
             case 'terms': return <TermsPage onNavigate={goBack} />;
             case 'privacy': return <PrivacyPage onNavigate={goBack} />;
+            case 'password_edit': return <PasswordEditPage />; // App.jsxのレイアウト構造の中に組み込みました
             default: return <LandingPage onNavigate={navigate} />;
           }
         })()}
@@ -359,7 +368,9 @@ export default function App() {
 
   return (
     <ToastContext.Provider value={showToast}>
-      <div className="w-full min-h-screen bg-black text-white">
+      {/* 改善点: w-full ではなく w-screen max-w-[100vw] overflow-x-hidden に変更し、
+          WebViewが画面外の見えない要素に引っ張られて画面全体を強制縮小するバグを完全に遮断します */}
+      <div className="w-screen max-w-[100vw] min-h-[100dvh] bg-black text-white overflow-x-hidden relative">
         {/* Toast Container */}
         <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
           {toasts.map(t => (
