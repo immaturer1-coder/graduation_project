@@ -61,10 +61,16 @@ const PcLinkPage = () => {
           received(data) {
             console.log('[WebSocket] Received broadcast message:', data);
 
-            // PC連携ステータスの同期処理（全デバイス共通）
+            // received 内のイベント処理を修正
             if (data.event === 'sync_status') {
               console.log('[WebSocket] Sync status updated:', data.payload);
-              setIsPcLinked(data.payload.is_linked);
+              setIsPcLinked(data.payload.is_linked); // ここで正確にPC連携状態を反映
+              return;
+            }
+
+            // PCが未連携の場合は、そもそも通知ロジックを動かさないガード
+            if (!isPcLinked && data.event !== 'sync_status') {
+              console.log('[WebSocket] Ignoring event due to PC not linked');
               return;
             }
 
