@@ -247,13 +247,9 @@ export default function App() {
     const consumer = getConsumer();
     const subscription = consumer.subscriptions.create("FocusSessionChannel", {
       received(data) {
-        const message = data.message || 'Notification';
-        const type = data.type || 'info';
-
-        showToast(message, type);
-
-        if (isPc && "Notification" in window && Notification.permission === "granted") {
-          new Notification("FocusFlow", { body: message });
+        if (data.message) {
+          const type = data.type || 'info';
+          showToast(data.message, type);
         }
       }
     });

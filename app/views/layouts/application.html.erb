@@ -25,9 +25,6 @@
 
     <%# パスワード編集画面以外でRailsのビューを描画する %>
     <% unless request.path == '/users/password/edit' %>
-      <% if lookup_context.exists?("shared/flash", [], true) %>
-        <%= render "shared/flash" %>
-      <% end %>
       <%= yield %>
     <% end %>
 

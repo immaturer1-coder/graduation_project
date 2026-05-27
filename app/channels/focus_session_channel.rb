@@ -12,7 +12,7 @@ class FocusSessionChannel < ApplicationCable::Channel
         "focus_session_#{current_user.id}",
         {
           event: "sync_status",
-          payload: { is_linked: true, pc_ready: is_pc_ready }
+          payload: { is_linked: is_pc_ready, pc_ready: is_pc_ready }
         }
       )
     else
@@ -57,7 +57,10 @@ class FocusSessionChannel < ApplicationCable::Channel
 
   # 現在のセッションにおけるPC側との接続状況を確認する
   def pc_connection_established?(user)
-    true
+    # サーバー内の全コネクションを走査し、同一ユーザーのPC接続が存在するかを確認する
+    ActionCable.server.connections.any? do |connection|
+      connection.current_user&.id == user.id
+    end
   end
 
   # 同一アカウントのPC・スマホへ向けてWebSocketブロードキャストを行う
