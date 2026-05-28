@@ -20,6 +20,8 @@
   </head>
 
   <body class="bg-slate-950 text-slate-100 min-h-screen">
+    <%= render 'shared/flash' %>
+
     <%# 常に存在させることで、Reactのレンダリングミスを防ぐ %>
     <div id="root"></div>
 
@@ -28,8 +30,8 @@
       <%= yield %>
     <% end %>
 
-    <%= javascript_include_tag "application", 
-                               "data-turbo-track": "reload", 
+    <%= javascript_include_tag "application",
+                               "data-turbo-track": "reload",
                                defer: true,
                                "data-turbo-suppress-warning": true %>
   </body>
