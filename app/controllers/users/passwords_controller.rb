@@ -33,6 +33,9 @@ class Users::PasswordsController < Devise::PasswordsController
 
       # 次の画面遷移（LP画面）で表示させるためにRailsのflashを設定する
       flash[:notice] = "パスワードが正常に更新されました。"
+      
+      # 【修正】JSONレスポンスを返した後、フロント側のリダイレクト(次のリクエスト)までメッセージを確実に保持させる
+      flash.keep(:notice)
 
       respond_to do |format|
         format.json do

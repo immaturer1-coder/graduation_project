@@ -30,6 +30,7 @@ const PcLinkPage = () => {
   const [isSyncFocusing, setIsSyncFocusing] = useState(false); // スマホが現在裏返し集中中か
   const [syncSessionData, setSyncSessionData] = useState(null); // 同期された時間等の設定情報
   const [isPcLinked, setIsPcLinked] = useState(false); // 【修正】PC連携ステータス管理
+  const isPcLinkedRef = useRef(false); // 【新規追加】クロージャのStale State対策として常に最新値を保持
 
   const channelRef = useRef(null);
   const { permission, requestPermission, sendNotification } = useNotification();
@@ -57,6 +58,7 @@ const PcLinkPage = () => {
             console.log('[WebSocket] Disconnected from FocusSessionChannel');
             setIsSyncFocusing(false);
             setIsPcLinked(false);
+            isPcLinkedRef.current = false;
           },
           received(data) {
             console.log('[WebSocket] Received broadcast message:', data);
@@ -64,12 +66,13 @@ const PcLinkPage = () => {
             // received 内のイベント処理を修正
             if (data.event === 'sync_status') {
               console.log('[WebSocket] Sync status updated:', data.payload);
-              setIsPcLinked(data.payload.is_linked); // ここで正確にPC連携状態を反映
+              setIsPcLinked(data.payload.is_linked);
+              isPcLinkedRef.current = data.payload.is_linked;
               return;
             }
 
             // PCが未連携の場合は、そもそも通知ロジックを動かさないガード
-            if (!isPcLinked && data.event !== 'sync_status') {
+            if (!isPcLinkedRef.current && data.event !== 'sync_status') {
               console.log('[WebSocket] Ignoring event due to PC not linked');
               return;
             }
